@@ -1,0 +1,118 @@
+syntax = "proto3";
+
+package ttt_dto;
+
+enum MemberType {
+    PLAYER = 0;
+    OBSERVER = 1;
+}
+
+enum Sign {
+    X = 0;
+    O = 1;
+    NONE = 2;
+}
+
+message JoinRequest {
+    MemberType join_type = 1;
+    optional string name = 2;
+    optional string password = 3;
+}
+
+message GameOptions {
+    optional int32 rows = 1;
+    optional int32 cols = 2;
+    optional int32 win_length = 3;
+    optional int32 max_moves = 4;
+}
+
+message JoinAccepted {
+    optional string token = 1;
+    optional int32 timelimit_ms = 2;
+}
+
+enum JoinRejectReason {
+    NAME_TAKEN = 0;
+    WRONG_PASSWORD = 1;
+    GAME_IN_PROGRESS = 2;
+    MALFORMED_MESSAGE = 3;
+}
+
+message JoinRejected {
+    JoinRejectReason reason = 1;
+}
+
+message JoinResponse {
+    oneof result {
+        JoinAccepted accepted = 1;
+        JoinRejected rejected = 2;
+    }
+}
+
+enum ClientResponseType {
+    READY = 0;
+    DISCONNECT = 1;
+}
+
+message ClientResponse {
+    ClientResponseType type = 1;
+    optional int32 move_x = 2;
+    optional int32 move_y = 3;
+}
+
+message NewGameUpdate {
+    GameOptions options = 1;
+    Sign sign = 2;
+}
+
+message GameStartedEvent { }
+
+message PlayerJoinedEvent {
+    Sign sign = 1;
+    optional string name = 2;
+}
+
+message MoveEvent {
+    Sign sign = 1;
+    optional int32 x = 2;
+    optional int32 y = 3;
+}
+
+message WinEvent {
+    Sign sign = 1;
+}
+
+message DrawEvent { }
+
+enum DqReason {
+    OUT_OF_FIELD = 0;
+    OUT_OF_ORDER = 1;
+    PLACE_OCCUPIED = 2;
+}
+
+message DqEvent {
+    Sign sign = 1;
+    DqReason reason = 2;
+}
+
+message Event {
+    optional int32 seq_no = 1;
+    oneof event {
+        GameStartedEvent game_started = 2;
+        PlayerJoinedEvent player_joined = 3;
+        MoveEvent move = 4;
+        WinEvent win = 5;
+        DrawEvent draw = 6;
+        DqEvent dq = 7;
+    }
+}
+
+message Update {
+    oneof update {
+        Event event = 1;
+        bool move_request = 2;
+        NewGameUpdate new_game = 3;
+        bool ping_update = 4;
+        bool server_closed = 5;
+    }
+}
