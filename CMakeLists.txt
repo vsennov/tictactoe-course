@@ -12,7 +12,7 @@ endif()
 # library with baseline player.
 #set(BUILD_TTTCORE "PREBUILT")
 
-if (BUILD_TTTCORE EQUAL "PREBUILT")
+if (BUILD_TTTCORE STREQUAL "PREBUILT")
   find_library(TTTCORE_LIB libtttcore.a PATHS libs)
 
   if (NOT TTTCORE_LIB)
@@ -25,7 +25,7 @@ if (BUILD_TTTCORE EQUAL "PREBUILT")
   endif()
 else()
   set(core_src src/core/event.cpp src/core/game.cpp src/core/state.cpp)
-  if (BUILD_TTTCORE EQUAL "FULL")
+  if (BUILD_TTTCORE STREQUAL "FULL")
     set(core_src ${core_src} ../baseline.cpp)
   endif()
   add_library(tttcore STATIC ${core_src})
