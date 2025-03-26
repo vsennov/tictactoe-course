@@ -16,10 +16,10 @@ int main(int argc, char *argv[]) {
   opts.win_len = 5;
   opts.max_moves = 0;
 
-  ttt::game::IPlayer *p1 = ttt::baseline::get_easy_player("p1");
-  ttt::game::IPlayer *p2 = ttt::baseline::get_harder_player("p2");
+  ttt::game::IPlayer *p1 = ttt::baseline::get_easy_player("p_easy");
+  ttt::game::IPlayer *p2 = ttt::baseline::get_harder_player("p_hard");
 
-  ttt::my_player::MyPlayer prand;
+  ttt::my_player::MyPlayer prand("prand");
 
   ttt::my_player::ConsoleWriter obs;
 
