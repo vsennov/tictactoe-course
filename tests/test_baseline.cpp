@@ -26,7 +26,7 @@ int main(int argc, char *argv[]) {
   ttt::game::Game game(opts);
   game.add_player(ttt::game::Sign::X, p1);
   game.add_player(ttt::game::Sign::O, p2);
-  /* game.add_player(ttt::game::Sign::O, &prand); */
+  // game.add_player(ttt::game::Sign::O, &prand);
   game.add_observer(&obs);
 
   std::cout << "\n";
