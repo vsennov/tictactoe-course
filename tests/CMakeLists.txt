@@ -4,6 +4,18 @@ add_executable(test_my_player test_my_player.cpp)
 target_link_libraries(test_my_player tttplayer)
 add_test(NAME smoke_test_player COMMAND ./test_my_player)
 
+if((BUILD_TTTCORE STREQUAL "FULL") OR (BUILD_TTTCORE STREQUAL "PREBUILT"))
+add_executable(test_stats_baseline_easy test_stats_baseline_easy.cpp)
+target_link_libraries(test_stats_baseline_easy tttplayer)
+add_test(NAME test_player_stats_baseline_easy COMMAND ./test_stats_baseline_easy)
+endif()
+
+if((BUILD_TTTCORE STREQUAL "FULL") OR (BUILD_TTTCORE STREQUAL "PREBUILT"))
+add_executable(test_stats_baseline_hard test_stats_baseline_hard.cpp)
+target_link_libraries(test_stats_baseline_hard tttplayer)
+add_test(NAME test_player_stats_baseline_hard COMMAND ./test_stats_baseline_hard)
+endif()
+
 add_executable(test_stats test_stats.cpp)
 target_link_libraries(test_stats tttplayer)
 add_test(NAME test_player_stats COMMAND ./test_stats)

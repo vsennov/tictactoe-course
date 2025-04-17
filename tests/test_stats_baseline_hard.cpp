@@ -1,4 +1,6 @@
 #include "player/my_player.hpp"
+#include "core/baseline.hpp"
+
 
 #include <cassert>
 #include <cstdio>
@@ -55,7 +57,7 @@ public:
 };
 
 int main(int argc, char *argv[]) {
-  std::cout << "Hello!\n";
+  std::cout << "Testing Myplayer vs Baseline hard!\n";
   if (argc >= 2) {
     std::srand(atoi(argv[1]));
   }
@@ -65,8 +67,9 @@ int main(int argc, char *argv[]) {
   opts.win_len = 5;
   opts.max_moves = 0;
 
-  ttt::my_player::MyPlayer p1("p1"), p2("p2"); // <~~ you are testing vs yourself!
-  TimeMeasuringPlayer tm_p1(p1), tm_p2(p2);
+  ttt::my_player::MyPlayer p1("p1"); // add your player here <~~~~~
+  ttt::game::IPlayer *p2 = ttt::baseline::get_harder_player("p2");
+  TimeMeasuringPlayer tm_p1(p1), tm_p2(*p2);
 
   ttt::game::Game game(opts);
   game.add_player(ttt::game::Sign::X, &tm_p1);
@@ -76,7 +79,7 @@ int main(int argc, char *argv[]) {
 
   AverageCounter game_time_counter;
 
-  for (int i = 0; i < 1'000; ++i) {
+  for (int i = 0; i < 100 /* <~~~ adjust number of sample tests here */; ++i) { 
     ttt::game::MoveResult res;
     do {
       BlockMeasurer ms{game_time_counter};
@@ -101,8 +104,8 @@ int main(int argc, char *argv[]) {
     game.reset();
   }
 
-  std::cout << "X wins: " << n_x_wins << "\n"
-            << "O wins: " << n_o_wins << "\n"
+  std::cout << "X(mine) wins: " << n_x_wins << "\n"
+            << "O(baseline hard) wins: " << n_o_wins << "\n"
             << "draws:  " << n_draws << "\n"
             << "errors: " << n_errors << "\n"
             << std::endl;
