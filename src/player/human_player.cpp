@@ -1,6 +1,8 @@
 #include "human_player.hpp"
 #include <iostream>
 #include <sstream>
+#include <iomanip>
+
 
 namespace ttt::human_player {
 
@@ -56,45 +58,30 @@ void HumanPlayer::display_board(const State& state) const {
     const int rows = state.get_opts().rows;
     const int cols = state.get_opts().cols;
     
-    //clear screen
-    std::cout << "\033[2J\033[1;1H";
-    
-    std::cout << "Current Board State (Move #" << state.get_move_no() << "):\n\n";
-    
-    //print column numbers
-    std::cout << "    ";
+    // Print the current state of the board
+    std::cout << "   "; // extra space for column index
     for (int x = 0; x < cols; ++x) {
-        std::cout << x << " ";
-        if (x < 10) std::cout << " "; //double-digit numbers allignment
+        std::cout << std::setw(2) << x%10;
     }
     std::cout << "\n";
     
-    //horizontal line
-    std::cout << "  +";
+    // line separator
+    std::cout << "   +";
     for (int x = 0; x < cols; ++x) {
-        std::cout << "---";
+        std::cout << "--";
     }
-    std::cout << "+\n";
+    std::cout << "\n";
     
-    //print row numbers
+    // print board with row indexes
     for (int y = 0; y < rows; ++y) {
-        std::cout << y;
-        if (y < 10) std::cout << " "; //double-digit numbers allignment 
-        std::cout << "|";
-        
+        std::cout << std::setw(2) << y << " |";
         for (int x = 0; x < cols; ++x) {
-            Sign val = state.get_value(x, y);
-            std::cout << " " << sign_to_char(val) << " ";
+            char c = sign_to_char(state.get_value(x, y));
+            std::cout << c << " "; // add spaces for readability and better debugging
         }
-        std::cout << "|\n";
+        std::cout << "\n";
     }
-    
-    //print horizontal line
-    std::cout << "  +";
-    for (int x = 0; x < cols; ++x) {
-        std::cout << "---";
-    }
-    std::cout << "+\n\n";
+    std::cout << "\n";
 }
 
 char HumanPlayer::sign_to_char(Sign sign) const {
