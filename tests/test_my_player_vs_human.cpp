@@ -18,7 +18,7 @@ int main(int argc, char *argv[]) {
 
   ttt::game::State::Opts opts;
   opts.rows = opts.cols = 15; // <~~ adjust the size of the board here
-  opts.win_len = 15; // <~~ adjust the size of the board here
+  opts.win_len = 5; // <~~ adjust the win_length here
   opts.max_moves = 0;
 
   ttt::my_player::MyPlayer p1("MyAIPlayer"); // <~~ put your ai player here
