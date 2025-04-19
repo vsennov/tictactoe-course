@@ -20,6 +20,12 @@ add_executable(test_stats test_stats.cpp)
 target_link_libraries(test_stats tttplayer)
 add_test(NAME test_player_stats COMMAND ./test_stats)
 
+#if you are testing vs baseline add the cmake condition, just uncomment the lines
+#if((BUILD_TTTCORE STREQUAL "FULL") OR (BUILD_TTTCORE STREQUAL "PREBUILT"))
+add_executable(test_my_player_vs_human test_my_player_vs_human.cpp)
+target_link_libraries(test_my_player_vs_human tttplayer)
+add_test(NAME test_my_player_vs_human COMMAND ./test_my_player_vs_human)
+#endif()
 if((BUILD_TTTCORE STREQUAL "FULL") OR (BUILD_TTTCORE STREQUAL "PREBUILT"))
   add_executable(test_with_baseline test_baseline.cpp)
   target_link_libraries(test_with_baseline tttplayer)
