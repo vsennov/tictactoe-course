@@ -53,7 +53,7 @@ Point HumanPlayer::make_move(const State& state) {
     
     return result;
 }
-
+//asd
 void HumanPlayer::display_board(const State& state) const {
     const int rows = state.get_opts().rows;
     const int cols = state.get_opts().cols;
