@@ -1,6 +1,47 @@
 #include "game.hpp"
+#include <iostream>
+#include <iomanip>
 
 namespace ttt::game {
+  void print_game_state(const State& state) {
+    const int cols = state.get_opts().cols;
+    const int rows = state.get_opts().rows;
+    
+    //print column indices
+    std::cout << "   "; // extra space for column index
+    for (int x = 0; x < cols; ++x) {
+      std::cout << std::setw(2) << x%10;
+    }
+    std::cout << "\n";
+    
+    //line separator
+    std::cout << "   +";
+    for (int x = 0; x < cols; ++x) {
+      std::cout << "--";
+    }
+    std::cout << "\n";
+    
+    //print board with row indices
+    for (int y = 0; y < rows; ++y) {
+      std::cout << std::setw(2) << y << " |";
+      for (int x = 0; x < cols; ++x) {
+        char c = '.';
+        switch (state.get_value(x, y)) {
+          case Sign::X:
+            c = 'X';
+            break;
+          case Sign::O:
+            c = 'O';
+            break;
+          default:
+            break;
+        }
+        std::cout << c << " ";
+      }
+      std::cout << "\n";
+    }
+    std::cout << "\n";
+  }
 
 Game::Game(const State::Opts &opts) : Game(State(opts)) {}
 
@@ -152,5 +193,6 @@ ComposedObserver &ComposedObserver::operator=(const ComposedObserver &obs) {
   m_observers[n] = 0;
   return *this;
 }
+
 
 }; // namespace ttt::game

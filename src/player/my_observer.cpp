@@ -1,4 +1,5 @@
 #include "my_observer.hpp"
+#include "core/game.hpp"
 
 #include <iostream>
 
@@ -32,7 +33,7 @@ static const char *print_dq(MoveResult rc) {
   }
 }
 
-void ConsoleWriter::handle_event(const State &, const Event &event) {
+void ConsoleWriter::handle_event(const State &state, const Event &event) {
   switch (event.type) {
   case EventType::GAME_STARTED:
     std::cout << "Game started!" << std::endl;
@@ -41,6 +42,9 @@ void ConsoleWriter::handle_event(const State &, const Event &event) {
     std::cout << "Player " << print_sign(event.data.move.player) << " played ("
               << event.data.move.x << ", " << event.data.move.y << ")"
               << std::endl;
+    //using printing function here:
+    //cant call the function from observer cause need to be built into libtttcore.a ?
+    //ttt::game::print_game_state(state);
     return;
   case EventType::PLAYER_JOINED:
     std::cout << "Player " << event.data.player_joined.player_name

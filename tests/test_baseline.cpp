@@ -1,6 +1,7 @@
 #include "core/baseline.hpp"
 #include "player/my_observer.hpp"
 #include "player/my_player.hpp"
+#include "core/game.hpp"
 
 
 #include <cstdio>
@@ -33,6 +34,9 @@ int main(int argc, char *argv[]) {
 
   
   while (game.process() == ttt::game::MoveResult::OK) {
+    //can't call the function here either because needs to be in libtttcore.a ?
+    //ttt::game::print_game_state(game.get_state());
+    
     // Print the current state of the board
     std::cout << "   "; //extra space for column index
     for (int x = 0; x < opts.cols; ++x) {
@@ -67,6 +71,7 @@ int main(int argc, char *argv[]) {
       std::cout << "\n";
     }
     std::cout << "\n";
+    
   }
 
   delete p1;
