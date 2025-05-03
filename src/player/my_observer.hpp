@@ -10,6 +10,7 @@ using game::State;
 
 class ConsoleWriter : public IObserver {
 public:
+  void print_game_state(const State& state);
   void handle_event(const State &game, const Event &event) override;
 };
 

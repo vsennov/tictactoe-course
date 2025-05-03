@@ -1,5 +1,6 @@
 #include "my_observer.hpp"
 #include "core/game.hpp"
+#include <iomanip>
 
 #include <iostream>
 
@@ -7,6 +8,47 @@ namespace ttt::my_player {
 using game::EventType;
 using game::MoveResult;
 using game::Sign;
+
+
+void ConsoleWriter::print_game_state(const State& state) {
+  const int cols = state.get_opts().cols;
+  const int rows = state.get_opts().rows;
+  
+  //print column indices
+  std::cout << "   "; // extra space for column index
+  for (int x = 0; x < cols; ++x) {
+    std::cout << std::setw(2) << x%10;
+  }
+  std::cout << "\n";
+  
+  //line separator
+  std::cout << "   +";
+  for (int x = 0; x < cols; ++x) {
+    std::cout << "--";
+  }
+  std::cout << "\n";
+  
+  //print board with row indices
+  for (int y = 0; y < rows; ++y) {
+    std::cout << std::setw(2) << y << " |";
+    for (int x = 0; x < cols; ++x) {
+      char c = '.';
+      switch (state.get_value(x, y)) {
+        case Sign::X:
+          c = 'X';
+          break;
+        case Sign::O:
+          c = 'O';
+          break;
+        default:
+          break;
+      }
+      std::cout << c << " ";
+    }
+    std::cout << "\n";
+  }
+  std::cout << "\n";
+}
 
 static const char *print_sign(Sign sign) {
   switch (sign) {

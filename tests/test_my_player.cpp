@@ -29,39 +29,6 @@ int main(int argc, char *argv[]) {
 
   std::cout << "\n";
   while (game.process() == ttt::game::MoveResult::OK) {
-    // Print the current state of the board
-    std::cout << "   "; //extra space for column index
-    for (int x = 0; x < opts.cols; ++x) {
-      std::cout << std::setw(2) << x%10;
-    }
-    std::cout << "\n";
-    
-    //line separator
-    std::cout << "   +";
-    for (int x = 0; x < opts.cols; ++x) {
-      std::cout << "--";
-    }
-    std::cout << "\n";
-    
-    // print board with row indexes
-    for (int y = 0; y < opts.rows; ++y) {
-      std::cout << std::setw(2) << y << " |";
-      for (int x = 0; x < opts.cols; ++x) {
-        char c = '.';
-        switch (game.get_state().get_value(x, y)) {
-        case ttt::game::Sign::X:
-          c = 'X';
-          break;
-        case ttt::game::Sign::O:
-          c = 'O';
-          break;
-        default:
-          break;
-        }
-        std::cout << c << " "; //add spaces for readability and better debugging
-      }
-      std::cout << "\n";
-    }
-    std::cout << "\n";
+    obs.print_game_state(game.get_state());
   }
 }
