@@ -1,2 +1,6 @@
 build/*
 .cache/*
+**/.DS_Store
+libs/lib*
+.vscode/
+
