@@ -5,8 +5,6 @@
 
 namespace ttt::game {
 
-  void print_game_state(const State& state);
-
 class Game;
 
 struct Point {
@@ -62,8 +60,6 @@ public:
   void reset();
 
   Game &operator=(const Game &game);
-
-  
 
 private:
   IPlayer *&_get_player(Sign sign);
