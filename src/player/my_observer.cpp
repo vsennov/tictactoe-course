@@ -1,4 +1,6 @@
 #include "my_observer.hpp"
+#include "core/game.hpp"
+#include <iomanip>
 
 #include <iostream>
 
@@ -6,6 +8,47 @@ namespace ttt::my_player {
 using game::EventType;
 using game::MoveResult;
 using game::Sign;
+
+
+void ConsoleWriter::print_game_state(const State& state) {
+  const int cols = state.get_opts().cols;
+  const int rows = state.get_opts().rows;
+  
+  //print column indices
+  std::cout << "   "; // extra space for column index
+  for (int x = 0; x < cols; ++x) {
+    std::cout << std::setw(2) << x%10;
+  }
+  std::cout << "\n";
+  
+  //line separator
+  std::cout << "   +";
+  for (int x = 0; x < cols; ++x) {
+    std::cout << "--";
+  }
+  std::cout << "\n";
+  
+  //print board with row indices
+  for (int y = 0; y < rows; ++y) {
+    std::cout << std::setw(2) << y << " |";
+    for (int x = 0; x < cols; ++x) {
+      char c = '.';
+      switch (state.get_value(x, y)) {
+        case Sign::X:
+          c = 'X';
+          break;
+        case Sign::O:
+          c = 'O';
+          break;
+        default:
+          break;
+      }
+      std::cout << c << " ";
+    }
+    std::cout << "\n";
+  }
+  std::cout << "\n";
+}
 
 static const char *print_sign(Sign sign) {
   switch (sign) {
@@ -32,7 +75,7 @@ static const char *print_dq(MoveResult rc) {
   }
 }
 
-void ConsoleWriter::handle_event(const State &, const Event &event) {
+void ConsoleWriter::handle_event(const State &state, const Event &event) {
   switch (event.type) {
   case EventType::GAME_STARTED:
     std::cout << "Game started!" << std::endl;
@@ -41,6 +84,9 @@ void ConsoleWriter::handle_event(const State &, const Event &event) {
     std::cout << "Player " << print_sign(event.data.move.player) << " played ("
               << event.data.move.x << ", " << event.data.move.y << ")"
               << std::endl;
+    //using printing function here:
+    //cant call the function from observer cause need to be built into libtttcore.a ?
+    //ttt::game::print_game_state(state);
     return;
   case EventType::PLAYER_JOINED:
     std::cout << "Player " << event.data.player_joined.player_name
