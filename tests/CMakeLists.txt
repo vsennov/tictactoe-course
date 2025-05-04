@@ -16,13 +16,12 @@ if((BUILD_TTTCORE STREQUAL "FULL") OR (BUILD_TTTCORE STREQUAL "PREBUILT"))
   target_link_libraries(test_with_baseline tttplayer)
   add_test(NAME test_againts_baseline COMMAND ./test_with_baseline)
 
-  #new stat test
+  # New stat test
   add_executable(test_stats_vs_baseline test_stats_vs_baseline.cpp)
   target_link_libraries(test_stats_vs_baseline tttplayer)
   add_test(NAME test_stats_vs_baseline COMMAND ./test_stats_vs_baseline)
   
   # Human player test
-  add_executable(test_my_player_vs_human test_my_player_vs_human.cpp)
+  add_executable(test_my_player_vs_human test_my_player_vs_human.cpp human_player.cpp)
   target_link_libraries(test_my_player_vs_human tttplayer)
-  #add_test(NAME test_my_player_vs_human COMMAND ./test_my_player_vs_human)
 endif()
