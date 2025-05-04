@@ -21,22 +21,19 @@ int main(int argc, char *argv[]) {
   opts.win_len = 5; 
   opts.max_moves = 0;
 
-  ttt::my_player::MyPlayer p1("MyAIPlayer"); // <~~ put your ai player here
-  ttt::human_player::HumanPlayer p2("human_player");
-    // ttt::game::IPlayer *p1 = ttt::baseline::get_harder_player("p_easy"); <~~ вы также можете играть против базовых игроков
-    // ttt::game::IPlayer *p1 = ttt::baseline::get_easy_player("p_easy"); <~~ вы также можете играть против базовых игроков
-    // ttt::my_player::MyPlayer prand("prand");
+  // auto p1 = new ttt::my_player::MyPlayer("MyAIPlayer");
+  // auto p1 = ttt::baseline::get_harder_player("p_easy");
+  auto p1 = ttt::baseline::get_easy_player("p_easy");
+  auto p2 = new ttt::human_player::HumanPlayer("human_player");
   ttt::my_player::ConsoleWriter obs;
   ttt::game::Game game(opts);
-  game.add_player(ttt::game::Sign::X, &p1);// если вы тестируете против базовых игроков, просто передайте указатель p1
+  game.add_player(ttt::game::Sign::X, p1);// если вы тестируете против базовых игроков, просто передайте указатель p1
 
-  game.add_player(ttt::game::Sign::O, &p2); 
+  game.add_player(ttt::game::Sign::O, p2); 
   game.add_observer(&obs);
 
   std::cout << "\n";
-  while (game.process() == ttt::game::MoveResult::OK) {
-
-    obs.print_game_state(game.get_state());
-  }
-
+  while (game.process() == ttt::game::MoveResult::OK) {}
+  delete p1;
+  delete p2;
 }
