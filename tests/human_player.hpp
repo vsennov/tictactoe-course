@@ -21,9 +21,7 @@ public:
     const char* get_name() const override;
 
 private:
-    //display board
-    void display_board(const State& state) const;
-    
+  
     //convert sign to char
     char sign_to_char(Sign sign) const;
     
