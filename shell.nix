@@ -16,5 +16,6 @@ pkgs.mkShell {
   ];
   shellHook = ''
     export LD_LIBRARY_PATH=$NIX_LD_LIBRARY_PATH
+    export PB_ADDITIONAL_LIBS="absl_log_internal_check_op;absl_log_internal_message"
   '';
 }

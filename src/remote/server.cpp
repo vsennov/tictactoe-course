@@ -48,7 +48,7 @@ bool recv_dto_with_fallback(zmq::socket_t &sock, DtoType &result,
   if (!recv_with_fallback(sock, msg, id, fallback, timelimit_ms)) {
     return false;
   }
-  return result.ParseFromString(msg.to_string_view());
+  return result.ParseFromString(msg.to_string());
 }
 
 template <class DtoType>
@@ -318,7 +318,7 @@ void BasicServer::handle_background_msg(const ClientIdentity &id,
     auto it = m_pending.find(id);
     PendingClientInfo info = it->second;
     m_pending.erase(it);
-    if (req2.ParseFromString(msg.to_string_view()) &&
+    if (req2.ParseFromString(msg.to_string()) &&
         req2.type() == ttt_dto::ClientResponseType::READY) {
       if (info.name.empty()) {
         m_observers.push_back(id);
@@ -334,7 +334,7 @@ void BasicServer::handle_background_msg(const ClientIdentity &id,
     send_to_client(m_sock, resp2, id);
     return;
   }
-  if (req.ParseFromString(msg.to_string_view())) {
+  if (req.ParseFromString(msg.to_string())) {
     if (!m_password.empty() &&
         (!req.has_password() || req.password() != m_password)) {
       resp.mutable_rejected()->set_reason(
@@ -436,7 +436,7 @@ bool BasicServer::receive_ready(const ClientIdentity &id) {
       continue;
     }
     ttt_dto::ClientResponse resp;
-    if (!resp.ParseFromString(msg[2].to_string_view()))
+    if (!resp.ParseFromString(msg[2].to_string()))
       return false;
     return resp.type() == ttt_dto::ClientResponseType::READY;
   }

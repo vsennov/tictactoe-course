@@ -126,5 +126,6 @@ ttt_dto::Sign translate_sign(const Sign &sign) {
   case Sign::NONE:
     return ttt_dto::Sign::NONE;
   }
+  return  ttt_dto::Sign::NONE;
 }
 }; // namespace ttt::remote
