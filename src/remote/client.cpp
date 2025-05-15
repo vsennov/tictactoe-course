@@ -39,7 +39,7 @@ bool Client::handle_one_update(int timelimit_ms) {
   ttt_dto::Update update;
   if (!recv_dto(m_sock, update)) {
     std::cerr << "bad message, disconnecting...\n";
-    disconnect("bad message");
+    disconnect("bad message", true);
     return true;
   }
   if (update.has_server_closed()) {
@@ -54,14 +54,14 @@ bool Client::handle_one_update(int timelimit_ms) {
   if (update.has_new_game()) {
     if (!update.new_game().has_options()) {
       std::cerr << "server sent new game message without options...\n";
-      disconnect("bad message");
+      disconnect("bad message", true);
       return true;
     }
     if (m_player) {
       const auto sign = translate_sign(update.new_game().sign());
       if (sign == Sign::NONE) {
         std::cerr << "server sent sign NONE for player...\n";
-        disconnect("bad message");
+        disconnect("bad message", true);
         return true;
       }
       m_player->set_sign(translate_sign(update.new_game().sign()));
@@ -73,7 +73,7 @@ bool Client::handle_one_update(int timelimit_ms) {
   }
   if (!m_state && (update.has_event() || update.has_move_request())) {
     std::cerr << "server sent request without starting game...\n";
-    disconnect("unexpected message from server");
+    disconnect("unexpected message from server", true);
     return true;
   }
   if (update.has_event()) {
@@ -89,7 +89,7 @@ bool Client::handle_one_update(int timelimit_ms) {
   if (update.has_move_request()) {
     if (m_player == 0) {
       std::cerr << "server sent move request for observer\n";
-      disconnect("bad server request");
+      disconnect("bad server request", true);
       return true;
     }
     auto pt = m_player->make_move(*m_state);
@@ -97,7 +97,7 @@ bool Client::handle_one_update(int timelimit_ms) {
     return true;
   }
   std::cerr << "server sent malformed update, disconnecting...\n";
-  disconnect("malformed update");
+  disconnect("malformed update", true);
   return true;
 }
 
@@ -121,7 +121,8 @@ void Client::send_move(int x, int y) {
   send_dto(m_sock, resp);
 }
 
-void Client::disconnect(const char *reason) {
+void Client::disconnect(const char *reason, bool should_retry) {
+  m_should_retry = should_retry;
   ttt_dto::ClientResponse resp;
   m_error = reason;
   resp.set_type(ttt_dto::ClientResponseType::DISCONNECT);

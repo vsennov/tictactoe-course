@@ -21,6 +21,7 @@ class Client {
   IPlayer *m_player = nullptr;
   std::unique_ptr<State> m_state;
   int m_timelimit_ms;
+  bool m_should_retry = false;
 
 public:
   Client();
@@ -34,11 +35,12 @@ public:
   bool handle_one_update(int timelimit_ms);
   void handle_all_updates();
   void close() { m_sock.close(); }
+  bool should_retry() const { return m_should_retry; }
 
 private:
   void send_ready();
   void send_move(int x, int y);
-  void disconnect(const char *reason);
+  void disconnect(const char *reason, bool should_retry);
 };
 
 class ClientContext {
