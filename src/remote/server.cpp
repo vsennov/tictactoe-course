@@ -269,7 +269,7 @@ void BasicServer::run_game(const State::Opts &opts, IPlayer *x_player,
   game_instance.add_observer(&obs);
   while (game::MoveResult::OK == game_instance.process())
     ;
-  game_instance.remove_observer(&obs);
+  // game_instance.remove_observer(&obs);
 }
 
 void BasicServer::wait_for_players(int timelimit_ms) {
