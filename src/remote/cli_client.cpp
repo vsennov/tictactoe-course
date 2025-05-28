@@ -1,5 +1,7 @@
 #include "cli_utils.hpp"
 #include "client.hpp"
+#include "core/event.hpp"
+#include "core/game.hpp"
 #include "player/my_observer.hpp"
 #include "player/my_player.hpp"
 
@@ -8,10 +10,54 @@
 #include <iostream>
 #include <thread>
 
+using ttt::game::EventType;
 using ttt::my_player::ConsoleWriter;
 using ttt::my_player::MyPlayer;
 using ttt::remote::Client;
 using ttt::remote::ClientContext;
+
+class FieldPrinter : public ttt::game::IObserver {
+  virtual void handle_event(const ttt::game::State &state,
+                            const ttt::game::Event &event) {
+    switch (event.type) {
+    case EventType::MOVE:
+    case EventType::DRAW:
+    case EventType::WIN:
+      ConsoleWriter::print_game_state(state);
+    default:
+      break;
+    }
+  }
+};
+
+struct ClientBuilder {
+  const char *address, *password;
+  ttt::game::IPlayer *player = nullptr;
+  ttt::game::IObserver *observer = nullptr;
+
+  ClientBuilder(mycli::cli_t &cli, mycli::parsed_args &args) {
+    const char *const *kw = nullptr;
+    address = cli.get_default("address");
+    if ((kw = args.get_keyword("address", 0)))
+      address = *kw;
+    const char *password = nullptr;
+    if ((kw = args.get_keyword("password", 0)))
+      password = *kw;
+    else
+      password = std::getenv("TTT_PASSWORD");
+  }
+
+  Client connect(ClientContext &ctx) {
+    if (player == nullptr) {
+      return ctx.connect_observer(address, *observer, password);
+    }
+    auto client = ctx.connect_player(address, *player, password);
+    if (observer) {
+      client.add_observer(observer);
+    }
+    return client;
+  }
+};
 
 int main(int argc, char *argv[]) {
   mycli::cli_t cli{{
@@ -43,29 +89,24 @@ int main(int argc, char *argv[]) {
     return 1;
   }
   bool retry = args.has_flag("retry");
-  const char *const *kw = nullptr;
-  const char *address = cli.get_default("address");
-  if ((kw = args.get_keyword("address", 0)))
-    address = *kw;
-  const char *password = nullptr;
-  if ((kw = args.get_keyword("password", 0)))
-    password = *kw;
-  else
-    password = std::getenv("TTT_PASSWORD");
   MyPlayer p1(name);
-  Client client;
+  ttt::game::ComposedObserver obs;
+  FieldPrinter printer;
+  ConsoleWriter writer;
+  obs.add_observer(&printer);
+  obs.add_observer(&writer);
+  ClientBuilder builder(cli, args);
+  if (args.has_flag("no-player") || args.has_flag("observer")) {
+    builder.observer = &obs;
+  }
+  if (!args.has_flag("no-player")) {
+    builder.player = &p1;
+  }
+
   ClientContext ctx;
-  ConsoleWriter obs;
   int retry_timeout = 2000;
   do {
-    if (args.has_flag("no-player"))
-      client = std::move(ctx.connect_observer(address, obs, password));
-    else {
-      client = std::move(ctx.connect_player(address, p1, password));
-      if (args.has_flag("observer")) {
-        client.add_observer(&obs);
-      }
-    }
+    Client client = builder.connect(ctx);
     if (!client.is_connected()) {
       std::cerr << "connection has not succeded: "
                 << client.get_connection_error() << std::endl;
@@ -75,17 +116,20 @@ int main(int argc, char *argv[]) {
       std::cout << "retrying in " << retry_timeout << "ms...\n";
       std::this_thread::sleep_for(std::chrono::milliseconds(retry_timeout));
       retry_timeout *= 1.2;
-    } else
-      break;
+    } else {
+      std::cout << "connected to server\n";
+      if (client.get_token().empty())
+        std::cout << "server has not sent any identity token\n";
+      else
+        std::cout << "identity token: '" << client.get_token() << "'\n";
+      std::cout << "starting receiving updates...\n";
+      client.handle_all_updates();
+      if (retry && client.should_retry()) {
+        std::cout << "retrying in " << retry_timeout << "ms...\n";
+        std::this_thread::sleep_for(std::chrono::milliseconds(retry_timeout));
+        retry_timeout *= 1.2;
+      }
+    }
   } while (retry);
-  std::cout << "connected to server\n";
-  if (client.get_token().empty())
-    std::cout << "server has not sent any identity token\n";
-  else
-    std::cout << "identity token: '" << client.get_token() << "'\n";
-  std::cout << "starting receiving updates...\n";
-  client.handle_all_updates();
-  std::cout << "client disconnected: " << client.get_connection_error() << '\n';
-  client.close();
   return 0;
 }
