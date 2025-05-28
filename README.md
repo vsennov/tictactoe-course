@@ -314,18 +314,19 @@ make test
 для игры по сети:
 
 - [protobuf](https://protobuf.dev/installation/) (версии 21);
-- [ZeroMQ](https://zeromq.org/download/).
+- [ZeroMQ](https://zeromq.org/download/) с биндингом для C++ 
+  [cppzmq](https://github.com/zeromq/cppzmq).
 
 Установка для Ubuntu (linux / WSL):
 
 ```sh
-sudo apt-get install libzmq3-dev protobuf-compiler
+sudo apt-get install libzmq3-dev protobuf-compiler cppzmq-dev
 ```
 
 Установка для OSX (через brew):
 
 ```sh
-brew install protobuf@21 zmq
+brew install protobuf@21 zmq cppzmq
 ```
 
 После установки нужно проверить, что версия библиотеки `protobuf` действительно 21:
@@ -370,5 +371,6 @@ protoc --version
 
 Для сдачи кода на турнир, нужно убедиться, что ваш код можно собрать через
 CMake и отправить весь код (без папки `build/`) архивом. Если ваш код использует
-какие-то внешние библиотеки, то укажите, что это за библиотеки и то, как вы
-их ставили.
+какие-то внешние библиотеки, то укажите, что это за библиотеки и то, как вы их
+ставили. Если ваш код использует какие-то вещи, специфичные для Windows или OSX,
+их тоже стоит убрать.
