@@ -40,6 +40,9 @@ void ConsoleWriter::print_game_state(const State& state) {
         case Sign::O:
           c = 'O';
           break;
+        case Sign::WALL:
+          c = '#';
+          break;
         default:
           break;
       }
@@ -56,7 +59,7 @@ static const char *print_sign(Sign sign) {
     return "X";
   case Sign::O:
     return "O";
-  case Sign::NONE:
+  default:
     return "?";
   }
   return "";

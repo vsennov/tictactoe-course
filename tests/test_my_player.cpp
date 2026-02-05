@@ -14,21 +14,24 @@ int main(int argc, char *argv[]) {
   }
 
   ttt::game::State::Opts opts;
-  opts.rows = opts.cols = 5;
-  opts.win_len = 5;
+  opts.rows = opts.cols = 20;
+  opts.win_len = 20;
   opts.max_moves = 0;
+
+  auto field_initializer = ttt::game::RandomObstaclesFI(0.75, 50, 1);
 
   ttt::my_player::MyPlayer p1("p1");
   ttt::my_player::MyPlayer p2("p2");
   ttt::my_player::ConsoleWriter obs;
 
-  ttt::game::Game game(opts);
+  ttt::game::Game game(opts, &field_initializer);
   game.add_player(ttt::game::Sign::X, &p1);
   game.add_player(ttt::game::Sign::O, &p2);
   game.add_observer(&obs);
 
-  std::cout << "\n";
+  obs.print_game_state(game.get_state());
   while (game.process() == ttt::game::MoveResult::OK) {
     obs.print_game_state(game.get_state());
   }
+  obs.print_game_state(game.get_state());
 }

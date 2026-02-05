@@ -2,7 +2,8 @@
 
 namespace ttt::game {
 
-Game::Game(const State::Opts &opts) : Game(State(opts)) {}
+Game::Game(const State::Opts &opts, const IFieldInitializer* initializer):
+  Game(State(opts, initializer)) {}
 
 Game::Game(const State &state)
     : m_observer(), m_x_player(0), m_o_player(0), m_state(state) {}
@@ -153,4 +154,8 @@ ComposedObserver &ComposedObserver::operator=(const ComposedObserver &obs) {
   return *this;
 }
 
-}; // namespace ttt::game
+void Game::set_field_initializer(const IFieldInitializer* initializer) {
+  m_state.set_field_initializer(initializer);
+}
+
+};  // namespace ttt::game
