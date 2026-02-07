@@ -151,10 +151,10 @@ make      # запускаем сборку через Make
 
 Этот флаг можно установить в исходном коде корневого файла `CMakeLists.txt`.
 
-Для сборки программ для игры по сети необходимо установить библиотеки 
-[Protobuf](https://protobuf.dev/) (вместе с Protobuf Compiler) и 
-[ZeroMQ](https://zeromq.org/), после чего необходимо запустить `cmake`
-с флагом `-DBUILD_TTTREMOTE=ON`.
+Для сборки программ для игры по сети необходимо установить библиотеки
+[Protobuf](https://protobuf.dev/) (вместе с Protobuf Compiler) и
+[ZeroMQ](https://zeromq.org/), после чего необходимо запустить `cmake` с флагом
+`-DBUILD_TTTREMOTE=ON`.
 
 ### Выполнение автоматических тестов
 
@@ -382,7 +382,7 @@ make test
 Для реализации игры по сети нужно установить библиотеки, которые использовались
 для игры по сети:
 
-- [protobuf](https://protobuf.dev/installation/) (версии 21);
+- [protobuf](https://protobuf.dev/installation/);
 - [ZeroMQ](https://zeromq.org/download/) с биндингом для C++ 
   [cppzmq](https://github.com/zeromq/cppzmq).
 
@@ -395,13 +395,7 @@ sudo apt-get install libzmq3-dev protobuf-compiler cppzmq-dev
 Установка для OSX (через brew):
 
 ```sh
-brew install protobuf@21 zmq cppzmq
-```
-
-После установки нужно проверить, что версия библиотеки `protobuf` действительно 21:
-
-```sh
-protoc --version
+brew install protobuf zmq cppzmq
 ```
 
 Если версия библиотеки отличается, возможно, будут проблемы при передаче данных,
