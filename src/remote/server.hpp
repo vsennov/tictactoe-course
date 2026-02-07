@@ -1,10 +1,10 @@
 #pragma once
+#include "core/field.hpp"
 #include "core/game.hpp"
 #include <list>
 #include <memory>
 #include <string>
 #include <unordered_map>
-#include <unordered_set>
 #include <zmq.hpp>
 
 namespace ttt::remote {
@@ -80,6 +80,7 @@ class BasicServer {
   std::list<ClientIdentity> m_observers;
   std::list<RemotePlayer> m_players;
   std::unordered_map<ClientIdentity, PendingClientInfo> m_pending;
+  std::unique_ptr<game::IFieldInitializer> m_initializer;
 
 public:
   BasicServer(zmq::context_t &ctx, int timelimit_ms);
@@ -89,6 +90,8 @@ public:
   void set_password(const char *password);
   void accept_players(bool accept);
   void accept_observers(bool accept);
+
+  void set_initializer(std::unique_ptr<game::IFieldInitializer>&& new_init);
 
   bool is_running() const;
   const char *get_error_msg() const;

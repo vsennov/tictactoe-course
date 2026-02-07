@@ -1,14 +1,49 @@
 #include "client.hpp"
 
+#include "core/event.hpp"
+#include "core/field.hpp"
+#include "core/game.hpp"
+#include "core/state.hpp"
+#include "dto.pb.h"
 #include "dto_utils.hpp"
 #include "zmq_utils.hpp"
 #include <algorithm>
 #include <cassert>
+#include <iostream>
+#include <vector>
 
 namespace ttt::remote {
 
 using game::Event;
 using game::EventType;
+
+class RemoteFieldInitializer: public game::IFieldInitializer {
+  std::vector<game::Point> m_obstacles;
+public:
+  RemoteFieldInitializer(const ttt_dto::GameStartedEvent &event) {
+    if (event.obstacles_size() == 0) {
+      return;
+    }
+    m_obstacles.reserve(event.obstacles_size());
+    for (const auto& pt : event.obstacles()) {
+      if (!pt.has_x() || !pt.has_y()) {
+        std::cerr << "malformed obstacle: " << pt.DebugString() << std::endl;
+        continue;
+      }
+      m_obstacles.push_back(game::Point{pt.x(), pt.y()});
+    }
+  }
+
+  game::IFieldInitializer * clone() const override {
+    return new RemoteFieldInitializer(*this);
+  }
+
+  void initialize(game::FieldBitmap& field) override {
+    for (const auto &pt : m_obstacles) {
+      field.set(pt.x, pt.y, game::Sign::WALL);
+    }
+  }
+};
 
 Client::Client() : Client("not connected yet") {}
 
@@ -81,6 +116,12 @@ bool Client::handle_one_update(int timelimit_ms) {
     if (event.type == EventType::MOVE) {
       m_state->process_move(event.data.move.player, event.data.move.x,
                             event.data.move.y);
+    }
+    if (event.type == EventType::GAME_STARTED) {
+      assert(update.event().has_game_started());
+      auto initializer = RemoteFieldInitializer(update.event().game_started());
+      m_state->set_field_initializer(&initializer);
+      m_state->reset();
     }
     m_obs.handle_event(*m_state, event);
     send_ready();
