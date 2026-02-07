@@ -87,9 +87,6 @@ void ConsoleWriter::handle_event(const State &state, const Event &event) {
     std::cout << "Player " << print_sign(event.data.move.player) << " played ("
               << event.data.move.x << ", " << event.data.move.y << ")"
               << std::endl;
-    //using printing function here:
-    //cant call the function from observer cause need to be built into libtttcore.a ?
-    //ttt::game::print_game_state(state);
     return;
   case EventType::PLAYER_JOINED:
     std::cout << "Player " << event.data.player_joined.player_name
