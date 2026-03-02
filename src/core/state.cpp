@@ -1,8 +1,5 @@
 #include "state.hpp"
 
-#include <algorithm>
-#include <cstring>
-
 namespace ttt::game {
 
 void State::_reset_state() {
@@ -16,26 +13,24 @@ void State::_reset_state() {
   m_winner = Sign::NONE;
 }
 
-State::State(const Opts &opts, const IFieldInitializer* initializer): 
-  m_opts(opts), m_field(opts.rows, opts.cols) {
+State::State(const Opts &opts, const IFieldInitializer *initializer)
+    : m_opts(opts), m_field(opts.rows, opts.cols) {
   if (initializer) {
     m_initializer = initializer->clone();
-  }
-  else {
+  } else {
     m_initializer = new DefaultFieldInitializer();
   }
   reset();
 }
 
-State::State(const State& state): m_opts(state.m_opts), m_field(state.m_field),
-  m_player(state.m_player), m_status(state.m_status), m_winner(state.m_winner),
-  m_move_no(state.m_move_no) {
+State::State(const State &state)
+    : m_opts(state.m_opts), m_field(state.m_field), m_player(state.m_player),
+      m_status(state.m_status), m_winner(state.m_winner),
+      m_move_no(state.m_move_no) {
   m_initializer = state.m_initializer->clone();
 }
 
-State::~State() {
-  delete m_initializer;
-}
+State::~State() { delete m_initializer; }
 
 void State::reset() {
   m_field.reset();
@@ -157,14 +152,13 @@ bool State::_is_winning(int x, int y) {
   return false;
 }
 
-void State::set_field_initializer(const IFieldInitializer* initializer) {
+void State::set_field_initializer(const IFieldInitializer *initializer) {
   delete m_initializer;
   if (initializer) {
     m_initializer = initializer->clone();
-  }
-  else {
+  } else {
     m_initializer = new DefaultFieldInitializer();
   }
 }
 
-};  // namespace ttt::game
+}; // namespace ttt::game

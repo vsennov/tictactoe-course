@@ -65,7 +65,14 @@ message NewGameUpdate {
     Sign sign = 2;
 }
 
-message GameStartedEvent { }
+message Point {
+    optional int32 x = 1;
+    optional int32 y = 2;
+}
+
+message GameStartedEvent {
+    repeated Point obstacles = 1;
+}
 
 message PlayerJoinedEvent {
     Sign sign = 1;

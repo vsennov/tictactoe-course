@@ -21,12 +21,7 @@ inline bool is_dq(MoveResult r) {
          r == MoveResult::DQ_PLACE_OCCUPIED;
 }
 
-enum class Sign { 
-  NONE,
-  X,
-  O,
-  WALL
-};
+enum class Sign { NONE, X, O, WALL };
 
 class State {
 public:
@@ -39,7 +34,7 @@ public:
 
 private:
   Opts m_opts;
-  IFieldInitializer* m_initializer;
+  IFieldInitializer *m_initializer;
   FieldBitmap m_field;
   int m_move_no;
   Status m_status;
@@ -47,7 +42,7 @@ private:
   Sign m_winner;
 
 public:
-  State(const Opts &opts, const IFieldInitializer* initializer = nullptr);
+  State(const Opts &opts, const IFieldInitializer *initializer = nullptr);
   State(const State &state);
   ~State();
 
@@ -63,7 +58,7 @@ public:
 
   State &operator=(const State &state) = default;
 
-  void set_field_initializer(const IFieldInitializer* initializer);
+  void set_field_initializer(const IFieldInitializer *initializer);
 
 private:
   bool _valid_coords(int x, int y) const;

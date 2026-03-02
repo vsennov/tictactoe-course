@@ -3,6 +3,7 @@
 
 #include <cstdlib>
 #include <iostream>
+#include <memory>
 #include <mutex>
 #include <string>
 #include <thread>
@@ -20,6 +21,10 @@ int main(int argc, char *argv[]) {
       {"timeout", 't', 1, "client timeout in milliseconds", "300"},
       {"size", 's', 1, "length of field side", "20"},
       {"win-len", 'w', 1, "length of field side", "5"},
+      {"playable-part", 0, 1,
+       "defines amount of obstacles in field, float in [0; 1]", "0.75"},
+      {"obstacle-max-len", 0, 1, "defines size of each obstacles series", "50"},
+      {"obstacle-gap", 0, 1, "defines space between obstacles", "1"},
       {"non-interactive", 'N', 0, "run one game with two first players"},
       {"help", 'h', 0, "show this message"},
   }};
@@ -54,7 +59,18 @@ int main(int argc, char *argv[]) {
   const char *timeout_arg = cli.get_default("timeout");
   if ((kw = args.get_keyword("timeout", 0)))
     timeout_arg = *kw;
-  int field_size = std::stoi(size_arg), win_len = std::stoi(wl_arg);
+  const char *gap_arg = cli.get_default("obstacle-gap");
+  if ((kw = args.get_keyword("obstacle-gap", 0)))
+    gap_arg = *kw;
+  const char *obstacle_len_arg = cli.get_default("obstacle-max-len");
+  if ((kw = args.get_keyword("obstacle-max-len", 0)))
+    gap_arg = *kw;
+  const char *playable_part_arg = cli.get_default("playable-part");
+  if ((kw = args.get_keyword("playable-part", 0)))
+    gap_arg = *kw;
+  int field_size = std::stoi(size_arg), win_len = std::stoi(wl_arg),
+      gap = std::stoi(gap_arg), obstacle_len = std::stoi(obstacle_len_arg);
+  float playable_part = std::stof(playable_part_arg);
   if (field_size < 2) {
     std::cerr << "invalid field size: " << field_size
               << ". field size must be >= 2\n";
@@ -63,6 +79,23 @@ int main(int argc, char *argv[]) {
   if (win_len < 2 || win_len > field_size) {
     std::cerr << "invalid win length: " << win_len
               << ". win length must be >= 2 and <= " << field_size << "\n";
+    return 1;
+  }
+
+  if (playable_part < 0 || playable_part > 1) {
+    std::cerr << "invalid playable part spec: " << playable_part
+              << ". it must be in [0; 1]\n";
+    return 1;
+  }
+
+  if (obstacle_len < 1) {
+    std::cerr << "invalid obstacle length: " << obstacle_len
+              << ". it must be >= 1\n";
+    return 1;
+  }
+
+  if (gap < 0) {
+    std::cerr << "invalid obstacle gap: " << gap << ". it must be >= 0\n";
     return 1;
   }
 
@@ -75,6 +108,11 @@ int main(int argc, char *argv[]) {
   BasicServer server(ctx, std::stoi(timeout_arg));
   if (password)
     server.set_password(password);
+  if (playable_part < 1) {
+    std::cout << "initializing field" << std::endl;
+    server.set_initializer(std::make_unique<ttt::game::RandomObstaclesFI>(
+        playable_part, obstacle_len, gap));
+  }
   server.bind(addr);
   if (!server.is_running()) {
     std::cerr << "cannot connect to " << addr << '\n';

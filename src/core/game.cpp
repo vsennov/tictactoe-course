@@ -2,8 +2,8 @@
 
 namespace ttt::game {
 
-Game::Game(const State::Opts &opts, const IFieldInitializer* initializer):
-  Game(State(opts, initializer)) {}
+Game::Game(const State::Opts &opts, const IFieldInitializer *initializer)
+    : Game(State(opts, initializer)) {}
 
 Game::Game(const State &state)
     : m_observer(), m_x_player(0), m_o_player(0), m_state(state) {}
@@ -97,7 +97,7 @@ IPlayer *&Game::_get_player(Sign sign) {
   }
 }
 
-ComposedObserver::ComposedObserver() : m_observers(new IObserver *[1] { 0 }) {}
+ComposedObserver::ComposedObserver() : m_observers(new IObserver *[1]{0}) {}
 ComposedObserver::ComposedObserver(const ComposedObserver &obs)
     : m_observers(0) {
   *this = obs;
@@ -113,7 +113,7 @@ void ComposedObserver::add_observer(IObserver *obs) {
     if (*pt == obs)
       return;
   const int n = pt - m_observers + 1;
-  pt = new IObserver *[n + 1] {};
+  pt = new IObserver *[n + 1]{};
   for (int i = 0; i < n - 1; ++i) {
     pt[i] = m_observers[i];
   }
@@ -154,8 +154,8 @@ ComposedObserver &ComposedObserver::operator=(const ComposedObserver &obs) {
   return *this;
 }
 
-void Game::set_field_initializer(const IFieldInitializer* initializer) {
+void Game::set_field_initializer(const IFieldInitializer *initializer) {
   m_state.set_field_initializer(initializer);
 }
 
-};  // namespace ttt::game
+}; // namespace ttt::game

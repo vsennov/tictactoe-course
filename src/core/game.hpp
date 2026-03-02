@@ -45,7 +45,7 @@ class Game {
   State m_state;
 
 public:
-  Game(const State::Opts &opts, const IFieldInitializer* initializer = nullptr);
+  Game(const State::Opts &opts, const IFieldInitializer *initializer = nullptr);
   Game(const State &state);
 
   const State &get_state() const;
@@ -56,7 +56,7 @@ public:
   void add_observer(IObserver *observer);
   void remove_observer(IObserver *observer);
 
-  void set_field_initializer(const IFieldInitializer* initializer);
+  void set_field_initializer(const IFieldInitializer *initializer);
 
   MoveResult process();
   void reset();
