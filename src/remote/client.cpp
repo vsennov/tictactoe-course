@@ -7,7 +7,6 @@
 #include "dto.pb.h"
 #include "dto_utils.hpp"
 #include "zmq_utils.hpp"
-#include <algorithm>
 #include <cassert>
 #include <iostream>
 #include <vector>
