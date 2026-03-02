@@ -1,107 +1,48 @@
 #include "state.hpp"
 
-#include <algorithm>
-#include <cstring>
-
 namespace ttt::game {
 
-FieldBitmap::FieldBitmap(int rows, int cols)
-    : m_rows(rows), m_cols(cols), m_bitmap(0) {
-  m_bitmap = new char[bitmap_size()];
-  reset();
-}
-
-FieldBitmap::FieldBitmap(const FieldBitmap &other) : m_bitmap(0) {
-  *this = other;
-}
-
-FieldBitmap::FieldBitmap(FieldBitmap &&other) : m_bitmap(0) {
-  *this = std::move(other);
-}
-
-FieldBitmap::~FieldBitmap() { delete[] m_bitmap; }
-
-FieldBitmap &FieldBitmap::operator=(const FieldBitmap &other) {
-  if (this == &other)
-    return *this;
-  m_cols = other.m_cols;
-  m_rows = other.m_rows;
-  delete[] m_bitmap;
-  m_bitmap = new char[bitmap_size()];
-  std::memcpy(m_bitmap, other.m_bitmap, bitmap_size());
-  return *this;
-}
-
-FieldBitmap &FieldBitmap::operator=(FieldBitmap &&other) {
-  if (this == &other)
-    return *this;
-  m_cols = other.m_cols;
-  m_rows = other.m_rows;
-  delete[] m_bitmap;
-  m_bitmap = other.m_bitmap;
-  other.m_cols = other.m_rows = 0;
-  other.m_bitmap = 0;
-  return *this;
-}
-
-Sign FieldBitmap::get(int x, int y) const {
-  if (!is_valid(x, y))
-    return Sign::NONE;
-  const int bit_no = (x + y * m_cols) * 2;
-  const int byte_no = bit_no / 8;
-  const char value = (m_bitmap[byte_no] >> (bit_no % 8)) & 0b11;
-  switch (value) {
-  case 1:
-    return Sign::X;
-  case 2:
-    return Sign::O;
-  default:
-    return Sign::NONE;
+void State::_reset_state() {
+  const int max_possible_moves = m_field.get_free_cells_num();
+  if (m_opts.max_moves == 0 || m_opts.max_moves > max_possible_moves) {
+    m_opts.max_moves = max_possible_moves;
   }
-}
-
-bool FieldBitmap::is_valid(int x, int y) const {
-  return !(x < 0 || x >= m_cols || y < 0 || y >= m_rows);
-}
-
-void FieldBitmap::set(int x, int y, Sign s) {
-  if (!is_valid(x, y))
-    return;
-  const int bit_no = (x + y * m_cols) * 2;
-  const int offset = bit_no % 8;
-  char &byte = m_bitmap[bit_no / 8];
-  byte &= ~(0b11 << offset);
-  if (Sign::NONE == s)
-    return;
-  const int value = s == Sign::X ? 1 : 2;
-  byte |= value << offset;
-}
-
-void FieldBitmap::reset() { std::memset(m_bitmap, 0, bitmap_size()); }
-
-int FieldBitmap::bitmap_size() const { return (m_rows * m_cols * 2 + 7) / 8; }
-
-State::State(const Opts &opts) : m_opts(opts), m_field(opts.rows, opts.cols) {
-  reset();
-}
-
-void State::reset() {
-  const int n_cells = m_opts.rows * m_opts.cols;
-  if (m_opts.max_moves == 0) {
-    m_opts.max_moves = n_cells;
-  }
-  m_field.reset();
   m_move_no = 0;
   m_player = Sign::X;
   m_status = Status::CREATED;
   m_winner = Sign::NONE;
 }
 
+State::State(const Opts &opts, const IFieldInitializer *initializer)
+    : m_opts(opts), m_field(opts.rows, opts.cols) {
+  if (initializer) {
+    m_initializer = initializer->clone();
+  } else {
+    m_initializer = new DefaultFieldInitializer();
+  }
+  reset();
+}
+
+State::State(const State &state)
+    : m_opts(state.m_opts), m_field(state.m_field), m_player(state.m_player),
+      m_status(state.m_status), m_winner(state.m_winner),
+      m_move_no(state.m_move_no) {
+  m_initializer = state.m_initializer->clone();
+}
+
+State::~State() { delete m_initializer; }
+
+void State::reset() {
+  m_field.reset();
+  m_initializer->initialize(m_field);
+  _reset_state();
+}
+
 MoveResult State::process_move(Sign player, int x, int y) {
   if (m_status == Status::ENDED) {
     return MoveResult::ENDED;
   }
-  if (player == Sign::NONE) {
+  if (player == Sign::NONE || player == Sign::WALL) {
     return MoveResult::ERROR;
   }
   if (player != m_player) {
@@ -182,7 +123,7 @@ bool State::_is_winning(int x, int y) {
   } directions[] = {{1, 0}, {0, 1}, {1, 1}, {1, -1}};
   for (const auto dir : directions) {
     for (int n = 0; n < m_opts.win_len; ++n) {
-      bool has_x = false, has_o = false, has_none = false;
+      bool has_x = false, has_o = false, has_none = false, has_wall = false;
       for (int i = 0; i < m_opts.win_len; ++i) {
         const int dn = n - i;
         switch (get_value(x + dir.dx * dn, y + dir.dy * dn)) {
@@ -195,14 +136,29 @@ bool State::_is_winning(int x, int y) {
         case Sign::NONE:
           has_none = true;
           break;
+        case Sign::WALL:
+          has_wall = true;
+          break;
+        default:
+          // There was an error message here. It's gone now.
+          break;
         }
       }
-      if (!has_none && (has_x && !has_o || has_o && !has_x)) {
+      if (!has_none && !has_wall && (has_x && !has_o || has_o && !has_x)) {
         return true;
       }
     }
   }
   return false;
+}
+
+void State::set_field_initializer(const IFieldInitializer *initializer) {
+  delete m_initializer;
+  if (initializer) {
+    m_initializer = initializer->clone();
+  } else {
+    m_initializer = new DefaultFieldInitializer();
+  }
 }
 
 }; // namespace ttt::game

@@ -31,7 +31,7 @@ class FieldPrinter : public ttt::game::IObserver {
 };
 
 struct ClientBuilder {
-  const char *address, *password;
+  const char *address = nullptr, *password = nullptr;
   ttt::game::IPlayer *player = nullptr;
   ttt::game::IObserver *observer = nullptr;
 
@@ -40,7 +40,6 @@ struct ClientBuilder {
     address = cli.get_default("address");
     if ((kw = args.get_keyword("address", 0)))
       address = *kw;
-    const char *password = nullptr;
     if ((kw = args.get_keyword("password", 0)))
       password = *kw;
     else

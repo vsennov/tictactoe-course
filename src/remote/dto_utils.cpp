@@ -1,4 +1,6 @@
 #include "dto_utils.hpp"
+#include "core/state.hpp"
+#include "dto.pb.h"
 
 namespace ttt::remote {
 
@@ -44,7 +46,7 @@ Event translate_event(const ttt_dto::Event &ev) {
   throw "unknown error";
 }
 
-ttt_dto::Event translate_event(const Event &ev) {
+ttt_dto::Event translate_event(const Event &ev, const State &state) {
   ttt_dto::Event result;
   switch (ev.type) {
   case EventType::DQ:
@@ -74,9 +76,20 @@ ttt_dto::Event translate_event(const Event &ev) {
     result.mutable_move()->set_x(ev.data.move.x);
     result.mutable_move()->set_y(ev.data.move.y);
     break;
-  case EventType::GAME_STARTED:
-    result.mutable_game_started();
+  case EventType::GAME_STARTED: {
+    ttt_dto::GameStartedEvent *gs = result.mutable_game_started();
+    const auto &opts = state.get_opts();
+    for (int x = 0; x < opts.cols; ++x) {
+      for (int y = 0; y < opts.rows; ++y) {
+        if (state.get_value(x, y) == game::Sign::WALL) {
+          auto pt = gs->add_obstacles();
+          pt->set_x(x);
+          pt->set_y(y);
+        }
+      }
+    }
     break;
+  }
   case EventType::PLAYER_JOINED:
     result.mutable_player_joined()->set_sign(
         translate_sign(ev.data.player_joined.player_sign));
@@ -126,6 +139,6 @@ ttt_dto::Sign translate_sign(const Sign &sign) {
   case Sign::NONE:
     return ttt_dto::Sign::NONE;
   }
-  return  ttt_dto::Sign::NONE;
+  return ttt_dto::Sign::NONE;
 }
 }; // namespace ttt::remote

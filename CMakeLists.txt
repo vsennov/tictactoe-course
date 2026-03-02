@@ -26,9 +26,18 @@ if (BUILD_TTTCORE STREQUAL "PREBUILT")
       )
   endif()
 else()
-  set(core_src src/core/event.cpp src/core/game.cpp src/core/state.cpp)
+  set(core_src src/core/event.cpp src/core/game.cpp src/core/state.cpp src/core/field.cpp)
   if (BUILD_TTTCORE STREQUAL "FULL")
-    set(core_src ${core_src} ../baseline.cpp)
+    include(FetchContent)
+
+    FetchContent_Declare(baseline_src_repo
+      GIT_REPOSITORY git@github.com:vsennov/tictactoe-baseline.git 
+      GIT_TAG 5aa65670b9dfc893440a1eaa3b0c67ae7030319c
+    )
+
+    FetchContent_MakeAvailable(baseline_src_repo)
+
+    set(core_src ${core_src} ${baseline_src_repo_SOURCE_DIR}/baseline.cpp)
   endif()
   add_library(tttcore STATIC ${core_src})
   set(TTTCORE_LIB tttcore)

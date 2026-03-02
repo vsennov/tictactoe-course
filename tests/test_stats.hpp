@@ -94,20 +94,26 @@ static TestResult run_game_tests(
     game::IPlayer& p1, 
     game::IPlayer& p2, 
     int num_iterations = 100,
-    int board_size = 15,
-    int win_length = 5) {
+    int board_size = 20,
+    int win_length = 5,
+    float playable_part = 0.75,
+    int max_obstacle_len = 50,
+    int obstacles_gap = 1) {
     
     //game options
     game::State::Opts opts;
     opts.rows = opts.cols = board_size;
     opts.win_len = win_length;
     opts.max_moves = 0;
+    auto field_initializer = 
+
+    ttt::game::RandomObstaclesFI(playable_part, max_obstacle_len, obstacles_gap);
     
     // Wrap players with time measurement
     TimeMeasuringPlayer tm_p1(p1), tm_p2(p2);
     
     
-    game::Game game(opts);
+    game::Game game(opts, &field_initializer);
     game.add_player(game::Sign::X, &tm_p1);
     game.add_player(game::Sign::O, &tm_p2);
     

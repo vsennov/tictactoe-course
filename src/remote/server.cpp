@@ -119,7 +119,7 @@ Point RemotePlayer::make_move(const State &) {
 
 void RemotePlayer::handle_event(const State &game, const game::Event &event) {
   ttt_dto::Update msg;
-  msg.set_allocated_event(new ttt_dto::Event(translate_event(event)));
+  msg.set_allocated_event(new ttt_dto::Event(translate_event(event, game)));
   send_to_client(m_sock, msg, m_id);
   ttt_dto::ClientResponse resp;
   if (!recv_dto_with_fallback(m_sock, resp, m_id, *m_fallback,
@@ -159,6 +159,10 @@ void BasicServer::accept_players(bool accept) { m_accepting_players = accept; }
 
 void BasicServer::accept_observers(bool accept) {
   m_accepting_observers = accept;
+}
+
+void BasicServer::set_initializer(std::unique_ptr<game::IFieldInitializer>&& new_init) {
+  m_initializer = std::move(new_init);
 }
 
 bool BasicServer::is_running() const { return m_error == 0; }
@@ -210,7 +214,7 @@ public:
     if (m_observers.empty())
       return;
     ttt_dto::Update msg;
-    auto event_msg = translate_event(event);
+    auto event_msg = translate_event(event, game);
     msg.mutable_event()->CopyFrom(event_msg);
     ttt_dto::ClientResponse resp;
     auto observers_copy = m_observers;
@@ -261,7 +265,7 @@ void BasicServer::run_game(const State::Opts &opts, IPlayer *x_player,
   for (auto &pl : m_players)
     pl.set_opts(opts);
 
-  Game game_instance(opts);
+  Game game_instance(opts, m_initializer.get());
   game_instance.add_player(Sign::X, x_player);
   game_instance.add_player(Sign::O, o_player);
   RemoteObserver obs(m_observers, m_sock, *this, m_timelimit_ms);

@@ -1,4 +1,5 @@
 #pragma once
+#include "field.hpp"
 
 namespace ttt::game {
 
@@ -20,31 +21,7 @@ inline bool is_dq(MoveResult r) {
          r == MoveResult::DQ_PLACE_OCCUPIED;
 }
 
-enum class Sign { X, O, NONE };
-
-class FieldBitmap {
-  char *m_bitmap;
-  int m_rows;
-  int m_cols;
-
-public:
-  FieldBitmap(int rows, int cols);
-  FieldBitmap(const FieldBitmap &other);
-  FieldBitmap(FieldBitmap &&other);
-  ~FieldBitmap();
-
-  FieldBitmap &operator=(const FieldBitmap &other);
-  FieldBitmap &operator=(FieldBitmap &&other);
-
-  void set(int x, int y, Sign s);
-  void reset();
-
-  Sign get(int x, int y) const;
-  bool is_valid(int x, int y) const;
-
-private:
-  int bitmap_size() const;
-};
+enum class Sign { NONE, X, O, WALL };
 
 class State {
 public:
@@ -57,7 +34,7 @@ public:
 
 private:
   Opts m_opts;
-
+  IFieldInitializer *m_initializer;
   FieldBitmap m_field;
   int m_move_no;
   Status m_status;
@@ -65,9 +42,9 @@ private:
   Sign m_winner;
 
 public:
-  State(const Opts &opts);
-  State(const State &state) = default;
-  ~State() = default;
+  State(const Opts &opts, const IFieldInitializer *initializer = nullptr);
+  State(const State &state);
+  ~State();
 
   void reset();
   MoveResult process_move(Sign player, int x, int y);
@@ -81,10 +58,13 @@ public:
 
   State &operator=(const State &state) = default;
 
+  void set_field_initializer(const IFieldInitializer *initializer);
+
 private:
   bool _valid_coords(int x, int y) const;
   void _set_value(int x, int y, Sign sign);
   Sign _opp_sign(Sign player);
   bool _is_winning(int x, int y);
+  void _reset_state();
 };
 }; // namespace ttt::game
