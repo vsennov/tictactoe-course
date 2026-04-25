@@ -64,50 +64,91 @@ int eval_for_sign(const State &state, const Sign &sgn, int x, int y) {
   return score;
 }
 
-int eval(const State &state, const Sign &sgn) {
+double eval(const State &state, const Sign &sgn) {
   Sign a = Sign::O;
   if (sgn == Sign::O)
     a = Sign::X;
-  int score = 0;
+  double score = 0.0;
   for (int x = 0; x < state.get_opts().rows; x++) {
     for (int y = 0; y < state.get_opts().cols; y++) {
       if (state.get_value(x, y) == sgn)
         score += eval_for_sign(state, sgn, x, y);
       if (state.get_value(x, y) == a)
-        score -= eval_for_sign(state, a, x, y) * 2;
+        score -= eval_for_sign(state, a, x, y) * 1.1;
     }
   }
   return score;
 }
 
 Point MyPlayer::make_move(const State &state) {
-  Point result;
-  // for (int n_attempt = 0; n_attempt < 50; ++n_attempt) {
-  //   result.x = std::rand() % state.get_opts().cols;
-  //   result.y = std::rand() % state.get_opts().rows;
-  //   if (state.get_value(result.x, result.y) != Sign::NONE) {
-  //     --n_attempt;
-  //     continue;
-  //   }
-  //   bool has_neighbors = false;
-  //   for (int dx = -1; dx <= 1; ++dx) {
-  //     for (int dy = -1; dy <= 1; ++dy) {
-  //       if (dx == 0 && dy == 0)
-  //         continue;
-  //       const Sign val = state.get_value(result.x + dx, result.y + dy);
-  //       if (val == Sign::X || val == Sign::O) {
-  //         has_neighbors = true;
-  //         break;
-  //       }
-  //     }
-  //     if (has_neighbors)
-  //       break;
-  //   }
-  //   if (has_neighbors)
-  //     break;
-  // }
+  Point best_move;
+  double best_score = -10000000;
+  Sign opponent = (m_sign == Sign::X ? Sign::O : Sign::X);
 
-  return result;
+  for (int x = 0; x < state.get_opts().rows; x++) {
+    for (int y = 0; y < state.get_opts().cols; y++) {
+      if (state.get_value(x, y) != Sign::NONE)
+        continue;
+
+      bool has_neighbors = false;
+      for (int dx = -1; dx <= 1; dx++) {
+        for (int dy = -1; dy <= 1; dy++) {
+          if (dx == 0 && dy == 0)
+            continue;
+
+          int nx = x + dx;
+          int ny = y + dy;
+
+          if (nx >= 0 && ny >= 0 && nx < state.get_opts().rows &&
+              ny < state.get_opts().cols) {
+
+            if (state.get_value(nx, ny) != Sign::NONE) {
+              has_neighbors = true;
+            }
+          }
+        }
+      }
+      if (!has_neighbors)
+        continue;
+
+      State new_state = state;
+      new_state.process_move(m_sign, x, y);
+      double score = eval(new_state, m_sign);
+      if (score > best_score) {
+        best_score = score;
+        best_move.x = x;
+        best_move.y = y;
+      }
+    }
+  }
+  return best_move;
+
+  // Point result;
+  //  for (int n_attempt = 0; n_attempt < 50; ++n_attempt) {
+  //    result.x = std::rand() % state.get_opts().cols;
+  //    result.y = std::rand() % state.get_opts().rows;
+  //    if (state.get_value(result.x, result.y) != Sign::NONE) {
+  //      --n_attempt;
+  //      continue;
+  //    }
+  //    bool has_neighbors = false;
+  //    for (int dx = -1; dx <= 1; ++dx) {
+  //      for (int dy = -1; dy <= 1; ++dy) {
+  //        if (dx == 0 && dy == 0)
+  //          continue;
+  //        const Sign val = state.get_value(result.x + dx, result.y + dy);
+  //        if (val == Sign::X || val == Sign::O) {
+  //          has_neighbors = true;
+  //          break;
+  //        }
+  //      }
+  //      if (has_neighbors)
+  //        break;
+  //    }
+  //    if (has_neighbors)
+  //      break;
+  //  }
+  //  return result;
 }
 
 }; // namespace ttt::my_player
