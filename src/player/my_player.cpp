@@ -7,19 +7,129 @@ namespace ttt::my_player {
 void MyPlayer::set_sign(Sign sign) { m_sign = sign; }
 const char *MyPlayer::get_name() const { return m_name; }
 
+void build_line(const State &state, Sign sgn, int x, int y, int dx, int dy,
+                int line[9]) {
+  for (int k = -4; k <= 4; k++) {
+    int nx = x + k * dx;
+    int ny = y + k * dy;
+
+    int idx = k + 4;
+
+    if (nx < 0 || ny < 0 || nx >= state.get_opts().rows ||
+        ny >= state.get_opts().cols) {
+      line[idx] = 3;
+    } else {
+      Sign v = state.get_value(nx, ny);
+      if (v == sgn)
+        line[idx] = 1;
+      else if (v == Sign::NONE)
+        line[idx] = 0;
+      else
+        line[idx] = 2;
+    }
+  }
+}
+
+int score_line(int line[9]) {
+  int score = 0;
+
+  for (int i = 0; i <= 4; i++) {
+    // XXXXX
+    if (line[i] == 1 && line[i + 1] == 1 && line[i + 2] == 1 &&
+        line[i + 3] == 1 && line[i + 4] == 1)
+      score += 30;
+
+    // XX.XX
+    if (line[i] == 1 && line[i + 1] == 1 && line[i + 2] == 0 &&
+        line[i + 3] == 1 && line[i + 4] == 1)
+      score += 5;
+
+    // X.XXX
+    if (line[i] == 1 && line[i + 1] == 0 && line[i + 2] == 1 &&
+        line[i + 3] == 1 && line[i + 4] == 1)
+      score += 5;
+
+    // XXX.X
+    if (line[i] == 1 && line[i + 1] == 1 && line[i + 2] == 1 &&
+        line[i + 3] == 0 && line[i + 4] == 1)
+      score += 5;
+
+    // XXXX.
+    if (line[i] == 1 && line[i + 1] == 1 && line[i + 2] == 1 &&
+        line[i + 3] == 1 && line[i + 4] == 0)
+      score += 5;
+
+    // .XXXX
+    if (line[i] == 0 && line[i + 1] == 1 && line[i + 2] == 1 &&
+        line[i + 3] == 1 && line[i + 4] == 1)
+      score += 5;
+  }
+
+  for (int i = 0; i <= 3; i++) {
+    // .XX.X.
+    if (line[i] == 0 && line[i + 1] == 1 && line[i + 2] == 1 &&
+        line[i + 3] == 0 && line[i + 4] == 1 && line[i + 5] == 0)
+      score += 3;
+
+    // .X.XX.
+    if (line[i] == 0 && line[i + 1] == 1 && line[i + 2] == 0 &&
+        line[i + 3] == 1 && line[i + 4] == 1 && line[i + 5] == 0)
+      score += 3;
+
+    // ..XX..
+    if (line[i] == 0 && line[i + 1] == 0 && line[i + 2] == 1 &&
+        line[i + 3] == 1 && line[i + 4] == 0 && line[i + 5] == 0)
+      score += 2;
+
+    // .X..X.
+    if (line[i] == 0 && line[i + 1] == 1 && line[i + 2] == 0 &&
+        line[i + 3] == 0 && line[i + 4] == 1 && line[i + 5] == 0)
+      score += 1;
+  }
+
+  for (int i = 0; i <= 2; i++) {
+    // ..XXX..
+    if (line[i] == 0 && line[i + 1] == 0 && line[i + 2] == 1 &&
+        line[i + 3] == 1 && line[i + 4] == 1 && line[i + 5] == 0 &&
+        line[i + 6] == 0)
+      score += 3;
+    // ..X.X..
+    if (line[i] == 0 && line[i + 1] == 0 && line[i + 2] == 1 &&
+        line[i + 3] == 0 && line[i + 4] == 1 && line[i + 5] == 0 &&
+        line[i + 6] == 0)
+      score += 2;
+  }
+  return score;
+}
+
+int scoreBonusPattern(const State &state, Sign sgn, int x, int y) {
+  int score = 0;
+  int directions[4][2] = {{1, 0}, {0, 1}, {1, 1}, {1, -1}};
+
+  for (int d = 0; d < 4; d++) {
+    int dx = directions[d][0];
+    int dy = directions[d][1];
+    int line[9];
+    build_line(state, sgn, x, y, dx, dy, line);
+    score += score_line(line);
+  }
+
+  return score;
+}
+
 int scorePattern(int count, int open_ends) {
   if (count == 5)
-    return 1000000;
+    return 30;
   if (count == 4 && open_ends == 2)
-    return 50000;
+    return 8;
   if (count == 4 && open_ends == 1)
-    return 1000;
+    return 5;
   if (count == 3 && open_ends == 2)
-    return 1000;
+    return 3;
   if (count == 3 && open_ends == 1)
-    return 100;
+    return 2;
   if (count == 2 && open_ends == 2)
-    return 100;
+    return 2;
   if (count == 2 && open_ends == 1)
     return 1;
   return 0;
@@ -33,6 +143,10 @@ int eval_for_sign(const State &state, const Sign &sgn, int x, int y) {
     int yn = y;
     int dx = directions[d][0];
     int dy = directions[d][1];
+    if (x - dx >= 0 && y - dy >= 0 && x - dx < state.get_opts().rows &&
+        y - dy < state.get_opts().cols &&
+        state.get_value(x - dx, y - dy) == sgn)
+      continue;
     int count = 1;
     int open = 0;
     while (xn + dx >= 0 && yn + dy >= 0 && xn + dx < state.get_opts().rows &&
@@ -71,10 +185,14 @@ double eval(const State &state, const Sign &sgn) {
   double score = 0.0;
   for (int x = 0; x < state.get_opts().rows; x++) {
     for (int y = 0; y < state.get_opts().cols; y++) {
-      if (state.get_value(x, y) == sgn)
+      if (state.get_value(x, y) == sgn) {
         score += eval_for_sign(state, sgn, x, y);
-      if (state.get_value(x, y) == a)
+        score += scoreBonusPattern(state, sgn, x, y);
+      }
+      if (state.get_value(x, y) == a) {
         score -= eval_for_sign(state, a, x, y) * 1.1;
+        score -= scoreBonusPattern(state, a, x, y);
+      }
     }
   }
   return score;
