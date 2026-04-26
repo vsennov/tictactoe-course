@@ -198,10 +198,45 @@ double eval(const State &state, const Sign &sgn) {
   return score;
 }
 
+Point find_start_move(const State &state) {
+  int rows = state.get_opts().rows;
+  int cols = state.get_opts().cols;
+  Point p;
+  int cx = rows / 2;
+  int cy = cols / 2;
+
+  int max_r = (rows > cols) ? rows : cols;
+  for (int r = 0; r <= max_r; r++) {
+    for (int dx = -r; dx <= r; dx++) {
+      for (int dy = -r; dy <= r; dy++) {
+        if (abs(dx) != r && abs(dy) != r)
+          continue;
+
+        int x = cx + dx;
+        int y = cy + dy;
+
+        if (x < 0 || y < 0 || x >= rows || y >= cols)
+          continue;
+        if (state.get_value(x, y) == Sign::NONE) {
+          p.x = x;
+          p.y = y;
+          return p;
+        }
+      }
+    }
+  }
+  p.x = 0;
+  p.y = 0;
+  return p;
+}
+
 Point MyPlayer::make_move(const State &state) {
   Point best_move;
   double best_score = -10000000;
   Sign opponent = (m_sign == Sign::X ? Sign::O : Sign::X);
+
+  if (state.get_move_no() == 0)
+    return find_start_move(state);
 
   for (int x = 0; x < state.get_opts().rows; x++) {
     for (int y = 0; y < state.get_opts().cols; y++) {
@@ -239,6 +274,7 @@ Point MyPlayer::make_move(const State &state) {
       }
     }
   }
+
   return best_move;
 
   // Point result;
