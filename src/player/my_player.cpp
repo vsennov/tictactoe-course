@@ -185,9 +185,7 @@ int attack_score(const FastBoard &fb, Sign sgn, int x, int y) {
 
 Point MyPlayer::make_move(const State &state) {
   init_lookup_table();
-  if (state.get_move_no() == 0)
-    return find_start_move(state);
-
+  if (state.get_move_no() == 0) return find_start_move(state);
   FastBoard fb;
   fb.sync(state); // Копируем данные в наш быстрый массив ОДИН раз
 
