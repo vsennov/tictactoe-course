@@ -1,4 +1,5 @@
 build/*
+build_release/*
 .cache/*
 **/.DS_Store
 libs/lib*
