@@ -7,193 +7,127 @@ namespace ttt::my_player {
 void MyPlayer::set_sign(Sign sign) { m_sign = sign; }
 const char *MyPlayer::get_name() const { return m_name; }
 
-void build_line(const State &state, Sign sgn, int x, int y, int dx, int dy,
+struct FastBoard {
+  Sign grid[20][20];
+  int rows;
+  int cols;
+  void sync(const State &state) {
+    rows = state.get_opts().rows;
+    cols = state.get_opts().cols;
+    for (int x = 0; x < rows; x++) {
+      for (int y = 0; y < cols; y++) {
+        grid[x][y] = state.get_value(x, y);
+      }
+    }
+  }
+  void make_move(int x, int y, Sign sgn) { grid[x][y] = sgn; }
+  void undo_move(int x, int y) { grid[x][y] = Sign::NONE; }
+  Sign get(int x, int y) const {
+    if (x < 0 || y < 0 || x >= rows || y >= cols)
+      return Sign::WALL;
+    return grid[x][y];
+  }
+};
+
+bool is_promising(const FastBoard &fb, int x, int y) {
+  for (int dx = -2; dx <= 2; dx++) {
+    for (int dy = -2; dy <= 2; dy++) {
+      if (dx == 0 && dy == 0)
+        continue;
+      Sign val = fb.get(x + dx, y + dy);
+      if (val == Sign::X || val == Sign::O)
+        return true;
+    }
+  }
+  return false;
+}
+
+void build_line(const FastBoard &fb, Sign sgn, int x, int y, int dx, int dy,
                 int line[9]) {
   for (int k = -4; k <= 4; k++) {
-    int nx = x + k * dx;
-    int ny = y + k * dy;
-
     int idx = k + 4;
+    if (k == 0) {
+      line[idx] = 1;
+      continue;
+    }
 
-    if (nx < 0 || ny < 0 || nx >= state.get_opts().rows ||
-        ny >= state.get_opts().cols) {
-      line[idx] = 3;
+    Sign v = fb.get(x + k * dx, y + k * dy);
+    if (v == sgn)
+      line[idx] = 1;
+    else if (v == Sign::NONE)
+      line[idx] = 0;
+    else
+      line[idx] = 2;
+  }
+}
+
+int get_index(const int window[5]) {
+  int index = 0;
+  int power = 1;
+  for (int i = 0; i < 5; i++) {
+    index += window[i] * power;
+    power *= 3;
+  }
+  return index;
+}
+
+static int pointTable[243];
+
+void init_lookup_table() {
+  for (int i = 0; i < 243; i++) {
+    int temp = i;
+    int window[5];
+    int stones = 0;
+    int blocked = 0;
+
+    for (int j = 0; j < 5; j++) {
+      window[j] = temp % 3;
+      if (window[j] == 1)
+        stones++;
+      if (window[j] == 2)
+        blocked++;
+      temp /= 3;
+    }
+    if (blocked > 0) {
+      pointTable[i] = 0;
     } else {
-      Sign v = state.get_value(nx, ny);
-      if (v == sgn)
-        line[idx] = 1;
-      else if (v == Sign::NONE)
-        line[idx] = 0;
+      if (stones == 5)
+        pointTable[i] = 100000000;
+      else if (stones == 4) {
+        pointTable[i] = 20000;
+      } else if (stones == 3) {
+        if (window[0] == 0 && window[4] == 0)
+          pointTable[i] = 100000;
+        else
+          pointTable[i] = 5000;
+        // pointTable[i] = 1000;
+      } else if (stones == 2)
+        if (window[0] == 0 && window[4] == 0)
+          pointTable[i] = 10000; // Открытая двойка (0110) — это база для тройки
+        else
+          pointTable[i] = 1000;
       else
-        line[idx] = 2;
+        pointTable[i] = 0;
     }
   }
 }
 
-int score_line(int line[9]) {
+int score_line_segment(int line[9]) {
   int score = 0;
-
   for (int i = 0; i <= 4; i++) {
-    // XXXXX
-    if (line[i] == 1 && line[i + 1] == 1 && line[i + 2] == 1 &&
-        line[i + 3] == 1 && line[i + 4] == 1)
-      score += 30;
-
-    // XX.XX
-    if (line[i] == 1 && line[i + 1] == 1 && line[i + 2] == 0 &&
-        line[i + 3] == 1 && line[i + 4] == 1)
-      score += 5;
-
-    // X.XXX
-    if (line[i] == 1 && line[i + 1] == 0 && line[i + 2] == 1 &&
-        line[i + 3] == 1 && line[i + 4] == 1)
-      score += 5;
-
-    // XXX.X
-    if (line[i] == 1 && line[i + 1] == 1 && line[i + 2] == 1 &&
-        line[i + 3] == 0 && line[i + 4] == 1)
-      score += 5;
-
-    // XXXX.
-    if (line[i] == 1 && line[i + 1] == 1 && line[i + 2] == 1 &&
-        line[i + 3] == 1 && line[i + 4] == 0)
-      score += 5;
-
-    // .XXXX
-    if (line[i] == 0 && line[i + 1] == 1 && line[i + 2] == 1 &&
-        line[i + 3] == 1 && line[i + 4] == 1)
-      score += 5;
+    int index = 0;
+    int power = 1;
+    for (int j = 0; j < 5; j++) {
+      index += line[i + j] * power;
+      power *= 3;
+    }
+    score += pointTable[index];
   }
 
   for (int i = 0; i <= 3; i++) {
-    // .XX.X.
     if (line[i] == 0 && line[i + 1] == 1 && line[i + 2] == 1 &&
-        line[i + 3] == 0 && line[i + 4] == 1 && line[i + 5] == 0)
-      score += 3;
-
-    // .X.XX.
-    if (line[i] == 0 && line[i + 1] == 1 && line[i + 2] == 0 &&
         line[i + 3] == 1 && line[i + 4] == 1 && line[i + 5] == 0)
-      score += 3;
-
-    // ..XX..
-    if (line[i] == 0 && line[i + 1] == 0 && line[i + 2] == 1 &&
-        line[i + 3] == 1 && line[i + 4] == 0 && line[i + 5] == 0)
-      score += 2;
-
-    // .X..X.
-    if (line[i] == 0 && line[i + 1] == 1 && line[i + 2] == 0 &&
-        line[i + 3] == 0 && line[i + 4] == 1 && line[i + 5] == 0)
-      score += 1;
-  }
-
-  for (int i = 0; i <= 2; i++) {
-    // ..XXX..
-    if (line[i] == 0 && line[i + 1] == 0 && line[i + 2] == 1 &&
-        line[i + 3] == 1 && line[i + 4] == 1 && line[i + 5] == 0 &&
-        line[i + 6] == 0)
-      score += 3;
-    // ..X.X..
-    if (line[i] == 0 && line[i + 1] == 0 && line[i + 2] == 1 &&
-        line[i + 3] == 0 && line[i + 4] == 1 && line[i + 5] == 0 &&
-        line[i + 6] == 0)
-      score += 2;
-  }
-  return score;
-}
-
-int scoreBonusPattern(const State &state, Sign sgn, int x, int y) {
-  int score = 0;
-  int directions[4][2] = {{1, 0}, {0, 1}, {1, 1}, {1, -1}};
-
-  for (int d = 0; d < 4; d++) {
-    int dx = directions[d][0];
-    int dy = directions[d][1];
-    int line[9];
-    build_line(state, sgn, x, y, dx, dy, line);
-    score += score_line(line);
-  }
-
-  return score;
-}
-
-int scorePattern(int count, int open_ends) {
-  if (count == 5)
-    return 30;
-  if (count == 4 && open_ends == 2)
-    return 8;
-  if (count == 4 && open_ends == 1)
-    return 5;
-  if (count == 3 && open_ends == 2)
-    return 3;
-  if (count == 3 && open_ends == 1)
-    return 2;
-  if (count == 2 && open_ends == 2)
-    return 2;
-  if (count == 2 && open_ends == 1)
-    return 1;
-  return 0;
-}
-
-int eval_for_sign(const State &state, const Sign &sgn, int x, int y) {
-  int score = 0;
-  int directions[4][2] = {{1, 0}, {0, 1}, {1, 1}, {1, -1}};
-  for (int d = 0; d < 4; d++) {
-    int xn = x;
-    int yn = y;
-    int dx = directions[d][0];
-    int dy = directions[d][1];
-    if (x - dx >= 0 && y - dy >= 0 && x - dx < state.get_opts().rows &&
-        y - dy < state.get_opts().cols &&
-        state.get_value(x - dx, y - dy) == sgn)
-      continue;
-    int count = 1;
-    int open = 0;
-    while (xn + dx >= 0 && yn + dy >= 0 && xn + dx < state.get_opts().rows &&
-           yn + dy < state.get_opts().cols &&
-           state.get_value(xn + dx, yn + dy) == sgn) {
-      xn += dx;
-      yn += dy;
-      count++;
-    }
-    if (xn + dx >= 0 && yn + dy >= 0 && xn + dx < state.get_opts().rows &&
-        yn + dy < state.get_opts().cols &&
-        state.get_value(xn + dx, yn + dy) == Sign::NONE)
-      open++;
-    xn = x;
-    yn = y;
-    while (xn - dx >= 0 && yn - dy >= 0 && xn - dx < state.get_opts().rows &&
-           yn - dy < state.get_opts().cols &&
-           state.get_value(xn - dx, yn - dy) == sgn) {
-      xn -= dx;
-      yn -= dy;
-      count++;
-    }
-    if (xn - dx >= 0 && yn - dy >= 0 && xn - dx < state.get_opts().rows &&
-        yn - dy < state.get_opts().cols &&
-        state.get_value(xn - dx, yn - dy) == Sign::NONE)
-      open++;
-    score += scorePattern(count, open);
-  }
-  return score;
-}
-
-double eval(const State &state, const Sign &sgn) {
-  Sign a = Sign::O;
-  if (sgn == Sign::O)
-    a = Sign::X;
-  double score = 0.0;
-  for (int x = 0; x < state.get_opts().rows; x++) {
-    for (int y = 0; y < state.get_opts().cols; y++) {
-      if (state.get_value(x, y) == sgn) {
-        score += eval_for_sign(state, sgn, x, y);
-        score += scoreBonusPattern(state, sgn, x, y);
-      }
-      if (state.get_value(x, y) == a) {
-        score -= eval_for_sign(state, a, x, y) * 1.1;
-        score -= scoreBonusPattern(state, a, x, y);
-      }
-    }
+      score += 1000000;
   }
   return score;
 }
@@ -230,79 +164,53 @@ Point find_start_move(const State &state) {
   return p;
 }
 
+int attack_score(const FastBoard &fb, Sign sgn, int x, int y) {
+  int score = 0;
+  int threats_count = 0;
+  int directions[4][2] = {{1, 0}, {0, 1}, {1, 1}, {1, -1}};
+  for (auto &d : directions) {
+    int line[9];
+    build_line(fb, sgn, x, y, d[0], d[1], line);
+    // score += score_line_segment(line);
+    int s = score_line_segment(line);
+    if (s >= 1000)
+      threats_count++;
+    score += s;
+  }
+  if (threats_count >= 2) {
+    score *= 10;
+  }
+  return score;
+}
+
 Point MyPlayer::make_move(const State &state) {
-  Point best_move;
-  double best_score = -10000000;
+  init_lookup_table();
+  if (state.get_move_no() == 0) return find_start_move(state);
+  FastBoard fb;
+  fb.sync(state); // Копируем данные в наш быстрый массив ОДИН раз
+
+  Point best_move = {0, 0};
+  double max_weight = -1e9;
   Sign opponent = (m_sign == Sign::X ? Sign::O : Sign::X);
 
-  if (state.get_move_no() == 0)
-    return find_start_move(state);
-
-  for (int x = 0; x < state.get_opts().rows; x++) {
-    for (int y = 0; y < state.get_opts().cols; y++) {
-      if (state.get_value(x, y) != Sign::NONE)
+  for (int x = 0; x < fb.rows; x++) {
+    for (int y = 0; y < fb.cols; y++) {
+      if (fb.get(x, y) != Sign::NONE || !is_promising(fb, x, y))
         continue;
 
-      bool has_neighbors = false;
-      for (int dx = -1; dx <= 1; dx++) {
-        for (int dy = -1; dy <= 1; dy++) {
-          if (dx == 0 && dy == 0)
-            continue;
+      int current_my_score = attack_score(fb, m_sign, x, y);
+      int current_opp_score = attack_score(fb, opponent, x, y);
+      int current_weight =
+          current_my_score + (current_opp_score * 1.2); // Защита чуть важнее
 
-          int nx = x + dx;
-          int ny = y + dy;
-
-          if (nx >= 0 && ny >= 0 && nx < state.get_opts().rows &&
-              ny < state.get_opts().cols) {
-
-            if (state.get_value(nx, ny) != Sign::NONE) {
-              has_neighbors = true;
-            }
-          }
-        }
-      }
-      if (!has_neighbors)
-        continue;
-
-      State new_state = state;
-      new_state.process_move(m_sign, x, y);
-      double score = eval(new_state, m_sign);
-      if (score > best_score) {
-        best_score = score;
-        best_move.x = x;
-        best_move.y = y;
+      if (current_weight > max_weight) {
+        max_weight = current_weight;
+        best_move = {x, y};
       }
     }
   }
 
   return best_move;
-
-  // Point result;
-  //  for (int n_attempt = 0; n_attempt < 50; ++n_attempt) {
-  //    result.x = std::rand() % state.get_opts().cols;
-  //    result.y = std::rand() % state.get_opts().rows;
-  //    if (state.get_value(result.x, result.y) != Sign::NONE) {
-  //      --n_attempt;
-  //      continue;
-  //    }
-  //    bool has_neighbors = false;
-  //    for (int dx = -1; dx <= 1; ++dx) {
-  //      for (int dy = -1; dy <= 1; ++dy) {
-  //        if (dx == 0 && dy == 0)
-  //          continue;
-  //        const Sign val = state.get_value(result.x + dx, result.y + dy);
-  //        if (val == Sign::X || val == Sign::O) {
-  //          has_neighbors = true;
-  //          break;
-  //        }
-  //      }
-  //      if (has_neighbors)
-  //        break;
-  //    }
-  //    if (has_neighbors)
-  //      break;
-  //  }
-  //  return result;
 }
 
 }; // namespace ttt::my_player
