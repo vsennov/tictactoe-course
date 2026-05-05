@@ -183,9 +183,50 @@ int attack_score(const FastBoard &fb, Sign sgn, int x, int y) {
   return score;
 }
 
+int evaluate_board(const FastBoard &fb, Sign current_sign) {
+  int my_score = 0;
+  int opp_score = 0;
+  Sign opponent = (current_sign == Sign::X) ? Sign::O : Sign::X;
+
+  for (int x = 0; x < fb.rows; x++) {
+    for (int y = 0; y < fb.cols; y++) {
+      // Оцениваем только клетки рядом с камнями
+      if (fb.get(x, y) == Sign::NONE && is_promising(fb, x, y)) {
+        my_score += attack_score(fb, current_sign, x, y);
+        opp_score += attack_score(fb, opponent, x, y);
+      }
+    }
+  }
+  // Возвращаем разницу. Это заставит бота учитывать ВСЕ угрозы на доске.
+  return my_score - (int)(opp_score * 0.9);
+}
+
+// без альфа бета
+int negamax(FastBoard &fb, int depth, Sign current_sign, Sign bot_sign) {
+  if (depth == 0) {
+    int score = evaluate_board(fb, bot_sign);
+    return (current_sign == bot_sign) ? score : -score;
+  }
+  int max_score = -100000000;
+  Sign opponent = (current_sign == Sign::X) ? Sign::O : Sign::X;
+  for (int x = 0; x < fb.rows; x++) {
+    for (int y = 0; y < fb.cols; y++) {
+      if (fb.get(x, y) != Sign::NONE || !is_promising(fb, x, y))
+        continue;
+      fb.make_move(x, y, current_sign);
+      int score = -negamax(fb, depth - 1, opponent, bot_sign);
+      fb.undo_move(x, y);
+      if (score > max_score)
+        max_score = score;
+    }
+  }
+  return max_score;
+}
+
 Point MyPlayer::make_move(const State &state) {
   init_lookup_table();
-  if (state.get_move_no() == 0) return find_start_move(state);
+  if (state.get_move_no() == 0)
+    return find_start_move(state);
   FastBoard fb;
   fb.sync(state); // Копируем данные в наш быстрый массив ОДИН раз
 
@@ -198,13 +239,18 @@ Point MyPlayer::make_move(const State &state) {
       if (fb.get(x, y) != Sign::NONE || !is_promising(fb, x, y))
         continue;
 
-      int current_my_score = attack_score(fb, m_sign, x, y);
-      int current_opp_score = attack_score(fb, opponent, x, y);
-      int current_weight =
-          current_my_score + (current_opp_score * 1.2); // Защита чуть важнее
+      // 1. Делаем пробный ход
+      fb.make_move(x, y, m_sign);
 
-      if (current_weight > max_weight) {
-        max_weight = current_weight;
+      // 2. Оцениваем последствия этого хода через негамакс
+      // Мы передаем opponent, так как следующий ход за ним
+      int score = -negamax(fb, 1, opponent, m_sign);
+
+      // 3. Отменяем ход
+      fb.undo_move(x, y);
+
+      if (score > max_weight) {
+        max_weight = score;
         best_move = {x, y};
       }
     }
