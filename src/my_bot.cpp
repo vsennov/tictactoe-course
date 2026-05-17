@@ -22,6 +22,25 @@ const char* MyBot::get_name() const {
     return m_name.c_str();
 }
 
+bool MyBot::is_in_bounds(const State& state, int x, int y) const {
+    int rows = state.get_opts().rows;
+    int cols = state.get_opts().cols;
+    return (x >= 0 && x < cols && y >= 0 && y < rows);
+}
+
+int MyBot::count_line(const State& state, int x, int y, int dx, int dy, Sign sign) const {
+    int length = 0;
+    
+    // Идем в направлении (dx, dy), пока видим свой символ
+    while (is_in_bounds(state, x, y) && state.get_value(x, y) == sign) {
+        length++;
+        x += dx;
+        y += dy;
+    }
+    
+    return length;
+}
+
 Point MyBot::make_move(const State& state) {
     int rows = state.get_opts().rows;
     int cols = state.get_opts().cols;
