@@ -40,6 +40,47 @@ SearchZone MyBot::get_search_zone(const State& state) const {
     };
 }
 
+bool MyBot::is_valid_move(const State& state, int x, int y) const {
+    // 1. Проверка границ поля
+    if (!is_in_bounds(state, x, y)) {
+        return false;
+    }
+    
+    // 2. Проверка, что клетка пустая
+    Sign value = state.get_value(x, y);
+    if (value != Sign::NONE) {
+        return false;
+    }
+    
+    // 3. Клетка легальна (не препятствие и не занята)
+    return true;
+}
+
+int MyBot::collect_candidates(const State& state, const SearchZone& zone, Candidate* candidates) const {
+    int count = 0;
+    const int MAX_CANDIDATES = 400;  // Максимум 20x20
+    
+    // Перебираем все клетки в зоне поиска
+    for (int y = zone.y_start; y <= zone.y_end; ++y) {
+        for (int x = zone.x_start; x <= zone.x_end; ++x) {
+            // Проверяем, что клетка легальна
+            if (is_valid_move(state, x, y)) {
+                candidates[count].x = x;
+                candidates[count].y = y;
+                candidates[count].score = 0;  // Пока оценка 0
+                count++;
+                
+                // Защита от переполнения
+                if (count >= MAX_CANDIDATES) {
+                    return count;
+                }
+            }
+        }
+    }
+    
+    return count;
+}
+
 // веса
 int MyBot::get_line_weight(int length, int open_ends) const {
     if (length < 2) return 0;
