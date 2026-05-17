@@ -14,6 +14,15 @@ struct SearchZone {
     int x_start, x_end, y_start, y_end;
 };
 
+/**
+ * @brief Структура для хранения кандидата на ход
+ */
+struct Candidate {
+    int x;
+    int y;
+    int score;  // Оценка кандидата (для будущего использования)
+};
+
 class MyBot : public IPlayer {
 public:
     explicit MyBot(const char* name = "MyBot");
@@ -27,6 +36,19 @@ private:
     // Зона поиска
     Point find_last_move(const State& state) const;
     SearchZone get_search_zone(const State& state) const;
+
+    /**
+     * @brief Собрать всех кандидатов на ход в зоне поиска
+     * @param state Состояние игры
+     * @param zone Зона поиска
+     * @return Массив кандидатов
+     */
+    int collect_candidates(const State& state, const SearchZone& zone, Candidate* candidates) const;
+    
+    /**
+     * @brief Проверить, является ли клетка легальным ходом
+     */
+    bool is_valid_move(const State& state, int x, int y) const;
     
     // Веса
     int get_line_weight(int length, int open_ends) const;
