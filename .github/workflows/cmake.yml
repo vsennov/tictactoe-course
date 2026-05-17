@@ -1,0 +1,23 @@
+name: CMake Build and Test
+
+on:
+  push:
+    branches: [ "main", "dev", "feature/*" ]
+  pull_request:
+    branches: [ "main", "dev" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Configure CMake
+      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=Release
+
+    - name: Build Project
+      run: cmake --build ${{github.workspace}}/build --config Release
+
+    - name: Run Tests
+      run: cd ${{github.workspace}}/build && ctest --output-on-failure
