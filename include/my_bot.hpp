@@ -30,13 +30,19 @@ private:
      * @param open_ends Количество открытых концов (0, 1, 2)
      * @return Вес линии
      */
+    
+    // Система весов
     int get_line_weight(int length, int open_ends) const;
     
-    // Константы весов (настраиваемые)
-    static const int WEIGHT_DOUBLE = 1;      // 2 в ряд
-    static const int WEIGHT_TRIPLE = 10;     // 3 в ряд
-    static const int WEIGHT_QUADRUPLE = 100; // 4 в ряд
-    static const int WEIGHT_WIN = 10000;     // 5+ в ряд (победа)
+    static const int WEIGHT_DOUBLE = 1;
+    static const int WEIGHT_TRIPLE = 10;
+    static const int WEIGHT_QUADRUPLE = 100;
+    static const int WEIGHT_WIN = 10000;
+    
+    // Сканирование
+    int count_line(const State& state, int x, int y, int dx, int dy, Sign sign) const;
+    int count_open_ends(const State& state, int x, int y, int dx, int dy, Sign sign) const;
+    bool is_in_bounds(const State& state, int x, int y) const;
 
     /**
      * @brief Считает длину непрерывной цепочки символов в заданном направлении

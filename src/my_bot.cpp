@@ -22,7 +22,6 @@ const char* MyBot::get_name() const {
     return m_name.c_str();
 }
 
-
 int MyBot::get_line_weight(int length, int open_ends) const {
     // Базовый вес в зависимости от длины
     int base_weight = 0;
@@ -62,10 +61,10 @@ int MyBot::count_line(const State& state, int x, int y, int dx, int dy, Sign sig
     
     int cx = x + dx;
     int cy = y + dy;
-    while (is_in_bounds(state, x, y) && state.get_value(x, y) == sign) {
+    while (is_in_bounds(state, cx, cy) && state.get_value(cx, cy) == sign) {
         length++;
-        x += dx;
-        y += dy;
+        cx += dx;
+        cy += dy;
     }
 
     int cx = x - dx;
