@@ -40,37 +40,35 @@ SearchZone MyBot::get_search_zone(const State& state) const {
     };
 }
 
+// фильтрация с учётом препятствий
+
 bool MyBot::is_valid_move(const State& state, int x, int y) const {
     // 1. Проверка границ поля
     if (!is_in_bounds(state, x, y)) {
         return false;
     }
     
-    // 2. Проверка, что клетка пустая
+    // 2. Проверка, что клетка пустая (не препятствие и не занята)
     Sign value = state.get_value(x, y);
     if (value != Sign::NONE) {
-        return false;
+        return false;  // Клетка занята (X, O или препятствие 🧱)
     }
     
-    // 3. Клетка легальна (не препятствие и не занята)
     return true;
 }
 
 int MyBot::collect_candidates(const State& state, const SearchZone& zone, Candidate* candidates) const {
     int count = 0;
-    const int MAX_CANDIDATES = 400;  // Максимум 20x20
+    const int MAX_CANDIDATES = 400;
     
-    // Перебираем все клетки в зоне поиска
     for (int y = zone.y_start; y <= zone.y_end; ++y) {
         for (int x = zone.x_start; x <= zone.x_end; ++x) {
-            // Проверяем, что клетка легальна
             if (is_valid_move(state, x, y)) {
                 candidates[count].x = x;
                 candidates[count].y = y;
-                candidates[count].score = 0;  // Пока оценка 0
+                candidates[count].score = 0;
                 count++;
                 
-                // Защита от переполнения
                 if (count >= MAX_CANDIDATES) {
                     return count;
                 }
@@ -90,51 +88,107 @@ int MyBot::get_line_weight(int length, int open_ends) const {
     return (open_ends == 1) ? base / 2 : base;
 }
 
-// сканирование
+// сканирование с учётом препятствий
+
 bool MyBot::is_in_bounds(const State& state, int x, int y) const {
     return x >= 0 && x < state.get_opts().cols && y >= 0 && y < state.get_opts().rows;
 }
 
 int MyBot::count_line(const State& state, int x, int y, int dx, int dy, Sign sign) const {
     int len = 1;
+    
+    // Идём вперёд
     int cx = x + dx, cy = y + dy;
-    while (is_in_bounds(state, cx, cy) && state.get_value(cx, cy) == sign) { len++; cx += dx; cy += dy; }
-    cx = x - dx; cy = y - dy;
-    while (is_in_bounds(state, cx, cy) && state.get_value(cx, cy) == sign) { len++; cx -= dx; cy -= dy; }
+    while (is_in_bounds(state, cx, cy)) {
+        Sign cell = state.get_value(cx, cy);
+        // Останавливаемся, если встретили препятствие или другой знак
+        if (cell != sign) {
+            break;
+        }
+        len++;
+        cx += dx;
+        cy += dy;
+    }
+    
+    // Идём назад
+    cx = x - dx;
+    cy = y - dy;
+    while (is_in_bounds(state, cx, cy)) {
+        Sign cell = state.get_value(cx, cy);
+        // Останавливаемся, если встретили препятствие или другой знак
+        if (cell != sign) {
+            break;
+        }
+        len++;
+        cx -= dx;
+        cy -= dy;
+    }
+    
     return len;
 }
 
 int MyBot::count_open_ends(const State& state, int x, int y, int dx, int dy, Sign sign) const {
     int open = 0;
     
-    // Вперёд
+    // Проверяем конец в направлении (dx, dy)
     int cx = x, cy = y;
-    while (is_in_bounds(state, cx, cy) && state.get_value(cx, cy) == sign) { cx += dx; cy += dy; }
-    if (!is_in_bounds(state, cx, cy) || state.get_value(cx, cy) == Sign::NONE) open++;
+    while (is_in_bounds(state, cx, cy) && state.get_value(cx, cy) == sign) {
+        cx += dx;
+        cy += dy;
+    }
     
-    // Назад (ВНИМАНИЕ: без слова int, просто присваивание)
-    cx = x; cy = y; 
-    while (is_in_bounds(state, cx, cy) && state.get_value(cx, cy) == sign) { cx -= dx; cy -= dy; }
-    if (!is_in_bounds(state, cx, cy) || state.get_value(cx, cy) == Sign::NONE) open++;
+    // Конец открыт, если:
+    // 1. Вышли за границы поля, ИЛИ
+    // 2. Следующая клетка пустая (Sign::NONE)
+    // Препятствие (Sign::OBSTACLE) или знак соперника = закрытый конец
+    if (!is_in_bounds(state, cx, cy)) {
+        open++;
+    } else {
+        Sign next_cell = state.get_value(cx, cy);
+        if (next_cell == Sign::NONE) {
+            open++;
+        }
+        // Если next_cell == Sign::OBSTACLE или другой знак → конец закрыт
+    }
+    
+    // Проверяем конец в направлении (-dx, -dy)
+    cx = x;
+    cy = y;
+    while (is_in_bounds(state, cx, cy) && state.get_value(cx, cy) == sign) {
+        cx -= dx;
+        cy -= dy;
+    }
+    
+    if (!is_in_bounds(state, cx, cy)) {
+        open++;
+    } else {
+        Sign next_cell = state.get_value(cx, cy);
+        if (next_cell == Sign::NONE) {
+            open++;
+        }
+    }
     
     return open;
 }
 
 // ход
 Point MyBot::make_move(const State& state) {
-    SearchZone z = get_search_zone(state);
-    Point cells[400]; int cnt = 0;
+    SearchZone zone = get_search_zone(state);
     
-    for (int y = z.y_start; y <= z.y_end; ++y)
-        for (int x = z.x_start; x <= z.x_end; ++x)
-            if (state.get_value(x, y) == Sign::NONE) cells[cnt++] = {x, y};
-            
-    if (cnt == 0) {
-        for (int y = 0; y < state.get_opts().rows; ++y)
-            for (int x = 0; x < state.get_opts().cols; ++x)
-                if (state.get_value(x, y) == Sign::NONE) cells[cnt++] = {x, y};
+    Candidate candidates[400];
+    int count = collect_candidates(state, zone, candidates);
+    
+    if (count == 0) {
+        SearchZone full_zone = {0, state.get_opts().cols - 1, 0, state.get_opts().rows - 1};
+        count = collect_candidates(state, full_zone, candidates);
     }
-    return (cnt == 0) ? Point{0,0} : cells[std::rand() % cnt];
+    
+    if (count == 0) {
+        return {0, 0};
+    }
+    
+    int index = std::rand() % count;
+    return {candidates[index].x, candidates[index].y};
 }
 
-} 
+} // namespace ttt::my_player
