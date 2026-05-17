@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/game.hpp"
+#include <string>
 
 namespace ttt::my_player {
 
@@ -9,6 +10,7 @@ using game::IPlayer;
 using game::Point;
 using game::Sign;
 using game::State;
+
 
 class MyPlayer : public IPlayer {
   Sign m_sign = Sign::NONE;
@@ -22,3 +24,5 @@ public:
 };
 
 }; // namespace ttt::my_player
+
+
