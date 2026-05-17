@@ -22,6 +22,35 @@ const char* MyBot::get_name() const {
     return m_name.c_str();
 }
 
+
+int MyBot::get_line_weight(int length, int open_ends) const {
+    // Базовый вес в зависимости от длины
+    int base_weight = 0;
+    
+    if (length >= 5) {
+        base_weight = WEIGHT_WIN;
+    } else if (length == 4) {
+        base_weight = WEIGHT_QUADRUPLE;
+    } else if (length == 3) {
+        base_weight = WEIGHT_TRIPLE;
+    } else if (length == 2) {
+        base_weight = WEIGHT_DOUBLE;
+    } else {
+        return 0; // Линия слишком короткая
+    }
+    
+    // Корректировка по количеству открытых концов
+    if (open_ends == 0) {
+        // Оба конца закрыты - линия бесполезна
+        return 0;
+    } else if (open_ends == 1) {
+        // Один конец закрыт - вес делится пополам
+        return base_weight / 2;
+    } else {
+        // Оба конца открыты - полный вес
+        return base_weight;
+    }
+}
 bool MyBot::is_in_bounds(const State& state, int x, int y) const {
     int rows = state.get_opts().rows;
     int cols = state.get_opts().cols;
@@ -31,14 +60,53 @@ bool MyBot::is_in_bounds(const State& state, int x, int y) const {
 int MyBot::count_line(const State& state, int x, int y, int dx, int dy, Sign sign) const {
     int length = 0;
     
-    // Идем в направлении (dx, dy), пока видим свой символ
+    int cx = x + dx;
+    int cy = y + dy;
     while (is_in_bounds(state, x, y) && state.get_value(x, y) == sign) {
         length++;
         x += dx;
         y += dy;
     }
+
+    int cx = x - dx;
+    int cy = y - dy;
+    while (is_in_bounds(state, cx, cy) && state.get_value(cx, cy) == sign) {
+        length++;
+        cx -= dx;
+        cy -= dy;
+    }
     
     return length;
+}
+
+int MyBot::count_open_ends(const State& state, int x, int y, int dx, int dy, Sign sign) const {
+    int open_ends = 0;
+    
+    // Проверяем конец в направлении (dx, dy)
+    int cx = x;
+    int cy = y;
+    // Идём до конца линии
+    while (is_in_bounds(state, cx, cy) && state.get_value(cx, cy) == sign) {
+        cx += dx;
+        cy += dy;
+    }
+    // Если следующая клетка пустая или за полем → конец открыт
+    if (!is_in_bounds(state, cx, cy) || state.get_value(cx, cy) == Sign::NONE) {
+        open_ends++;
+    }
+    
+    // Проверяем конец в направлении (-dx, -dy)
+    cx = x;
+    cy = y;
+    while (is_in_bounds(state, cx, cy) && state.get_value(cx, cy) == sign) {
+        cx -= dx;
+        cy -= dy;
+    }
+    if (!is_in_bounds(state, cx, cy) || state.get_value(cx, cy) == Sign::NONE) {
+        open_ends++;
+    }
+    
+    return open_ends;
 }
 
 Point MyBot::make_move(const State& state) {
