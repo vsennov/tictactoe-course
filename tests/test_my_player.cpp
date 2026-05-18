@@ -15,7 +15,7 @@ int main(int argc, char *argv[]) {
 
   ttt::game::State::Opts opts;
   opts.rows = opts.cols = 20;
-  opts.win_len = 20;
+  opts.win_len = 5;
   opts.max_moves = 0;
 
   auto field_initializer = ttt::game::RandomObstaclesFI(0.75, 50, 1);
