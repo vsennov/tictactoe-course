@@ -138,7 +138,7 @@ Point MyPlayer::make_move(const State &state) {
                 MoveStats def = evaluate_move(state, x, y, opp);   // Оценка защиты
 
 
-                int prio = 7; // Базовый приоритет
+                int prio = 7;
                 if (att.wins > 0) {
                     prio = 1;
                 }
@@ -150,6 +150,12 @@ Point MyPlayer::make_move(const State &state) {
                 }
                 else if (def.open_fours > 0) {
                     prio = 4;
+                }
+                else if ((att.open_fours + att.fours + att.open_threes) >= 2) {
+                    prio = 5;
+                }
+                else if ((def.open_fours + def.fours + def.open_threes) >= 2) {
+                    prio = 6;
                 }
                 
 
