@@ -108,33 +108,77 @@ bool MyPlayer::has_neighbor(const State& state, int cx, int cy, int radius) cons
 
 
 Point MyPlayer::make_move(const State &state) {
-  Point result;
-  for (int n_attempt = 0; n_attempt < 50; ++n_attempt) {
-    result.x = std::rand() % state.get_opts().cols;
-    result.y = std::rand() % state.get_opts().rows;
-    if (state.get_value(result.x, result.y) != Sign::NONE) {
-      --n_attempt;
-      continue;
-    }
-    bool has_neighbors = false;
-    for (int dx = -1; dx <= 1; ++dx) {
-      for (int dy = -1; dy <= 1; ++dy) {
-        if (dx == 0 && dy == 0)
-          continue;
-        const Sign val = state.get_value(result.x + dx, result.y + dy);
-        if (val == Sign::X || val == Sign::O) {
-          has_neighbors = true;
-          break;
-        }
-      }
-      if (has_neighbors)
-        break;
-    }
-    if (has_neighbors)
-      break;
-  }
-  return result;
-}
+  int w = state.get_opts().cols;
+        int h = state.get_opts().rows;
+        Sign opp;
 
+        if (m_sign == Sign::X) {
+            opp = Sign::O;
+        }
+        else {
+            opp = Sign::X;
+        }
+
+        int best_prio = 8; // Наивысший приоритет
+        double best_score = -1.0; // минимальный бал
+        Point best_move = { 0, 0 };
+        bool found_any = false; // найден ли хоть один активный ход
+
+        
+        for (int y = 0; y < h; y++) {
+            for (int x = 0; x < w; x++) {
+                if (state.get_value(x, y) != Sign::NONE) continue; // Пропуск занятых клеток
+
+                
+                if (!has_neighbor(state, x, y, 2)) continue;
+                found_any = true; 
+
+                
+                MoveStats att = evaluate_move(state, x, y, m_sign); // Оценка атаки
+                MoveStats def = evaluate_move(state, x, y, opp);   // Оценка защиты
+
+
+                int prio = 7; // Базовый приоритет
+                if (att.wins > 0) {
+                    prio = 1;
+                }
+                else if (def.wins > 0) {
+                    prio = 2;
+                }
+                else if (att.open_fours > 0) {
+                    prio = 3;
+                }
+                else if (def.open_fours > 0) {
+                    prio = 4;
+                }
+                
+
+
+                //Расчёт числового балла (score)
+                double score_att = att.fours * 1000 + att.open_threes * 500 + att.threes * 100 + att.twos * 10;
+                double score_def = def.fours * 1000 + def.open_threes * 500 + def.threes * 100 + def.twos * 10;
+
+                //штраф если ход далеко от центра
+                double dx = x - w / 2.0;
+                double dy = y - h / 2.0;
+                if (dx < 0) dx = -dx;
+                if (dy < 0) dy = -dy;
+
+                double score = (score_att * 1.1) + score_def - (dx + dy); // Итоговая формула оценки
+
+                //Выбор лучшего хода
+                if (prio < best_prio) { 
+                    best_prio = prio;
+                    best_score = score;
+                    best_move = { x, y };
+                }
+                else if (prio == best_prio) { 
+                    if (score > best_score) {
+                        best_score = score;
+                        best_move = { x, y };
+                    }
+                }
+            }
+        }
 
 }; // namespace ttt::my_player
