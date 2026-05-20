@@ -124,7 +124,7 @@ Point MyPlayer::make_move(const State &state) {
         Point best_move = { 0, 0 };
         bool found_any = false; // найден ли хоть один активный ход
 
-        
+        //лучший ход
         for (int y = 0; y < h; y++) {
             for (int x = 0; x < w; x++) {
                 if (state.get_value(x, y) != Sign::NONE) continue; // Пропуск занятых клеток
@@ -186,5 +186,29 @@ Point MyPlayer::make_move(const State &state) {
                 }
             }
         }
+        if (!found_any) {
+            int cx = w / 2;
+            int cy = h / 2;
+            int min_d = 999999;
 
+            for (int y = 0; y < h; y++) {
+                for (int x = 0; x < w; x++) {
+                    if (state.get_value(x, y) == Sign::NONE) {
+                        int d_x = x - cx;
+                        if (d_x < 0) d_x = -d_x;
+
+                        int d_y = y - cy;
+                        if (d_y < 0) d_y = -d_y;
+
+                        if (d_x + d_y < min_d) {
+                            min_d = d_x + d_y;
+                            best_move = { x, y };
+                        }
+                    }
+                }
+            }
+        }
+
+        return best_move;
+    }
 }; // namespace ttt::my_player
