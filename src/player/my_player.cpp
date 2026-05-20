@@ -87,6 +87,25 @@ MoveStats MyPlayer::evaluate_move(const State& state, int cx, int cy, Sign color
         return s;
     }
 
+bool MyPlayer::has_neighbor(const State& state, int cx, int cy, int radius) const {
+        int w = state.get_opts().cols;
+        int h = state.get_opts().rows;
+        for (int dy = -radius; dy <= radius; dy++) {
+            for (int dx = -radius; dx <= radius; dx++) {
+                if (dx == 0 && dy == 0) continue;
+                int nx = cx + dx;
+                int ny = cy + dy;
+                if (nx >= 0 && nx < w && ny >= 0 && ny < h) {
+                    Sign val = state.get_value(nx, ny);
+                    if (val == Sign::X || val == Sign::O) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
 
 Point MyPlayer::make_move(const State &state) {
   Point result;
