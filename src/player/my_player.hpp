@@ -10,6 +10,15 @@ using game::Point;
 using game::Sign;
 using game::State;
 
+struct MoveStats {
+        int wins = 0;
+        int open_fours = 0;
+        int fours = 0;
+        int open_threes = 0;
+        int threes = 0;
+        int twos = 0;
+    };
+
 class MyPlayer : public IPlayer {
   Sign m_sign = Sign::NONE;
   const char *m_name;
@@ -19,6 +28,11 @@ public:
   void set_sign(Sign sign) override;
   Point make_move(const State &game) override;
   const char *get_name() const override;
+
+private:
+  MoveStats evaluate_move(const State& state, int cx, int cy, Sign color) const;
+  bool has_neighbor(const State& state, int cx, int cy, int radius) const;
+
 };
 
 }; // namespace ttt::my_player
