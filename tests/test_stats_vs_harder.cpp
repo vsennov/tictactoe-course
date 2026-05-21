@@ -12,11 +12,9 @@ int main(int argc, char* argv[]) {
 
 
     ttt::my_player::MyPlayer p1("MyPlayer"); ////поместите вашего игрока сюда
-    //ttt::game::IPlayer* p2 = ttt::baseline::get_easy_player("BaselineHard"); //здесь вы можете выбрать между базовыми игроками: сложным и лёгким
     ttt::game::IPlayer* p2 = ttt::baseline::get_harder_player("BaselineHard");
-
     auto result = ttt::test::run_game_tests(p1, *p2, 100); //здесь вы можете изменить количество тестовых итераций ~~ 100
-
+    //винрейт от 25-38%, зав от кол партий
 
     ttt::test::print_test_results(result, "MyPlayer", "BaselineHard");
 
