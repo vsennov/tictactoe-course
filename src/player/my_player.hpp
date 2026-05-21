@@ -31,6 +31,8 @@ public:
 
 private:
   MoveStats evaluate_move(const State& state, int cx, int cy, Sign color) const;
+  bool has_neighbor(const State& state, int cx, int cy, int radius) const;
+
 };
 
 }; // namespace ttt::my_player
