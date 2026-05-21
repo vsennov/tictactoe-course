@@ -1,0 +1,23 @@
+name: TTT-CI
+
+on: [push, pull_request]
+
+jobs:
+  linux-job:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get code
+        uses: actions/checkout@v4
+
+      - name: Prepare Libs
+        run: |
+          cp libs/libtttcore_x86_64.a libs/libtttcore.a
+
+      - name: Configure CMake
+        run: cmake -B build -DBUILD_TTTCORE=PREBUILT
+
+      - name: Build
+        run: cmake --build build
+
+      - name: Run Tests
+        run: cd build && ctest --output-on-failure
