@@ -161,8 +161,16 @@ Point MyPlayer::make_move(const State &state) {
 
 
                 //Расчёт числового балла (score)
-                double score_att = att.fours * 1000 + att.open_threes * 500 + att.threes * 100 + att.twos * 10;
-                double score_def = def.fours * 1000 + def.open_threes * 500 + def.threes * 100 + def.twos * 10;
+                double score_att = att.open_fours * 50000
+                 + att.fours     * 5000
+                 + att.open_threes * 2000
+                 + att.threes    * 200
+                 + att.twos      * 20;
+                double score_def = def.open_fours * 50000
+                 + def.fours     * 5000
+                 + def.open_threes * 2000
+                 + def.threes    * 200
+                 + def.twos      * 20;
 
                 //штраф если ход далеко от центра
                 double dx = x - w / 2.0;
@@ -170,7 +178,7 @@ Point MyPlayer::make_move(const State &state) {
                 if (dx < 0) dx = -dx;
                 if (dy < 0) dy = -dy;
 
-                double score = (score_att * 1.1) + score_def - (dx + dy); // Итоговая формула оценки
+                double score = (score_att * 1.5) + score_def - (dx + dy)*0.5; // Итоговая формула оценки
 
                 //Выбор лучшего хода
                 if (prio < best_prio) { 
