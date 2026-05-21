@@ -54,16 +54,16 @@ MoveStats MyPlayer::evaluate_move(const State& state, int cx, int cy, Sign color
                 //Классификация результата
                 if (ok) {
                     if (mine == win_len) {
-                        s.wins++;//победа
+                        s.wins++;
                     }
                     else if (mine == win_len - 1) {
-                        d_fours++;// четвёрка
+                        d_fours++;
                     }
                     else if (mine == win_len - 2) {
-                        d_threes++;//тройка
+                        d_threes++;
                     }
                     else if (mine == win_len - 3) {
-                        d_twos++;//двойка
+                        d_twos++;
                     }
                 }
             }
